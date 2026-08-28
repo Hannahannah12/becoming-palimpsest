@@ -1,20 +1,22 @@
-/opt/homebrew/Library/Homebrew/cmd/shellenv.sh: line 18: /bin/ps: Operation not permitted
 # Becoming Palimpsest (2025)
 
-**Becoming Palimpsest** is an interactive artwork created by Xiaohan Sun in 2025. It stages an AI-generated philosophical encounter between Henri Bergson and Gilles Deleuze. Body detection is performed locally in the visitor's browser, and dialogue screenshots are downloaded to the visitor's device.
+**Becoming Palimpsest** is an interactive artwork created by Xiaohan Sun in 2025. It stages an AI-generated philosophical encounter between Henri Bergson and Gilles Deleuze, exploring memory, duration, difference, and machine-generated time.
 
-## Privacy and API architecture
+## Technical notes
 
-- Camera frames are processed locally by BodyPix and are not uploaded by this project.
-- Screenshots are downloaded locally and are not sent to cloud storage.
-- Dialogue text is sent through same-origin serverless endpoints to OpenAI and DeepSeek.
-- API credentials exist only as deployment environment variables and must never be committed.
+- Body detection and camera processing run locally in the visitor's browser.
+- Screenshots are downloaded to the visitor's device and are not uploaded.
+- Dialogue requests use secure server-side endpoints for OpenAI and DeepSeek.
+- API keys are stored only as deployment environment variables and are never included in this repository.
 
-## Deploy with Vercel
+## Running the work
 
-1. Import this GitHub repository into Vercel.
-2. Add `OPENAI_API_KEY` and `DEEPSEEK_API_KEY` under Project Settings → Environment Variables.
-3. Optionally set `OPENAI_MODEL` and `DEEPSEEK_MODEL`.
-4. Deploy, then add the deployment URL to the artwork's portfolio page.
+Import this repository into Vercel, then add `OPENAI_API_KEY` and `DEEPSEEK_API_KEY` in the project's environment variables. Optional model settings are documented in `.env.example`.
 
-Before adding new keys, revoke every credential that previously appeared in browser code or source files. Configure provider spending limits and Vercel firewall/rate-limiting rules before a public exhibition.
+## More information
+
+Project page: [xiaohan-sun.com/becoming-palimpsest](https://xiaohan-sun.com/becoming-palimpsest)
+
+## Rights
+
+Copyright © 2025 Xiaohan Sun. All rights reserved.
