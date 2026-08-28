@@ -1,4 +1,3 @@
-/opt/homebrew/Library/Homebrew/cmd/shellenv.sh: line 18: /bin/ps: Operation not permitted
 const WINDOW_MS = 60_000;
 const MAX_REQUESTS = 12;
 const visitors = new Map();
