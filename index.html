@@ -1,0 +1,1286 @@
+/opt/homebrew/Library/Homebrew/cmd/shellenv.sh: line 18: /bin/ps: Operation not permitted
+
+<!--
+===========================================
+PRINT VERSION - Becoming Palimsest- AN AI Philosophical Dialogue
+===========================================
+
+This version includes:
+- AI dialogue between Bergson and Deleuze
+- Camera integration with person detection
+- Speech synthesis removed (print-only version)
+- Screenshot saved locally instead of Tencent Cloud upload
+- Topic selection removed for simplified interaction
+- Wave animation effects preserved for visual appeal
+
+Optimized for print documentation and local archiving.
+===========================================
+-->
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Philosophical Dialogue</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+
+    <style>
+
+/* 
+--------------------------------------------- UI Styles & Layout --------------------------------------------- 
+*/
+
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        /* Camera background styles */
+        #camera-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            z-index: -1;
+            transform: scaleX(-1) scale(1.1) skew(1deg, 0.5deg);
+            filter: grayscale(100%) blur(3px) contrast(0.7) brightness(1.3);
+            opacity: 0.4;
+            mix-blend-mode: multiply;
+            transition: opacity 0.1s ease;
+        }
+        
+        
+        
+        /* .topic-header {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            margin: 10px;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            font-style: normal;
+            font-weight: 400;
+            line-height: 1.6;
+            letter-spacing: 0.3px;
+            text-align: center;
+            z-index: 200;
+            backdrop-filter: none;
+            border-radius: 0;
+            box-shadow: none;
+            color: #494848;
+            text-shadow: 
+                0 0 5px rgba(255, 255, 255, 0.8),
+                0 0 10px rgba(255, 255, 255, 0.6),
+                0 0 15px rgba(255, 255, 255, 0.4),
+                0 0 20px rgba(255, 255, 255, 0.2);
+            filter: blur(0.5px);
+        } */
+        
+        .chat-container {
+            position: absolute;
+            top: 50px;
+            left: 20px;
+            right: 20px;
+            bottom: 80px;
+            overflow-y: auto;
+            padding: 20px;
+            background: transparent;
+            z-index: 100;
+            backdrop-filter: none;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+        
+        .chat-container::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .dialogue-line {
+            margin-bottom: 20px;
+            font-size: 11px;
+            line-height: 1.6;
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-weight: 500;
+            letter-spacing: 1px;
+            animation: fadeIn 0.3s ease;
+            transition: transform 0.1s ease;
+            transform: skew(-1deg, 0deg);
+        }
+        
+        .speaker {
+            font-weight: bold;
+            display: inline;
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-weight: 700;
+            color: #666666;
+        }
+        
+        .speaker.bergson {
+            color: #666666;
+        }
+        
+        .speaker.deleuze {
+            color: #666666;
+        }
+       
+        .message-content {
+            display: inline;
+            margin-left: 5px;
+            font-family: 'Courier New', monospace;
+            font-style: italic;
+            font-weight:500;
+            letter-spacing: 0.3px;
+            text-shadow: 
+                0 0 8px rgba(255, 255, 255, 1),
+                0 0 12px rgba(255, 255, 255, 0.8),
+                0 0 15px rgba(255, 255, 255, 0.6),
+                0 0 20px rgba(255, 255, 255, 0.4);
+            transition: all 0.3s ease;
+            word-break: normal;
+        }
+
+        /* .topic-content {
+            font-family: 'Courier New', monospace;
+            font-style: normal !important;
+            font-weight: 400;
+            letter-spacing: 1.5px;
+            text-align: center;
+            display: block;
+            margin: 20px 0;
+            padding: 20px;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #494848;
+            text-shadow: 
+                0 0 5px rgba(255, 255, 255, 0.8),
+                0 0 10px rgba(255, 255, 255, 0.6),
+                0 0 15px rgba(255, 255, 255, 0.4),
+                0 0 20px rgba(255, 255, 255, 0.2);
+            filter: blur(0.5px);
+        } */
+
+        .message-content:hover {
+            text-shadow: 
+                0 0 8px rgba(255, 255, 255, 1),
+                0 0 16px rgba(255, 255, 255, 0.8),
+                0 0 24px rgba(255, 255, 255, 0.6),
+                0 0 32px rgba(255, 255, 255, 0.4);
+        }
+        
+        .thinking {
+            opacity: 0.6;
+            font-style: italic;
+        }
+        
+        .typing-cursor {
+            display: inline-block;
+            background-color: black;
+            width: 2px;
+            height: 1.2em;
+            animation: blink 1s infinite;
+            margin-left: 2px;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .controls:hover {
+            opacity: 1;
+        }
+        
+        .controls::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            right: -20px;
+            bottom: -20px;
+            z-index: -1;
+        }
+        
+        .control-btn {
+            background: rgba(255, 255, 255, 0.8);
+            color: black;
+            border: 1px solid black;
+            padding: 8px 16px;
+            border-radius: 0;
+            cursor: pointer;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(2px);
+        }
+        
+        .control-btn:hover {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+        }
+        
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .control-btn:disabled:hover {
+            background: rgba(255, 255, 255, 0.8);
+            color: black;
+        }
+        
+        .status {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid black;
+            padding: 15px 25px;
+            font-size: 12x;
+            z-index: 2000;
+            display: none;
+            font-family: 'Courier New', monospace;
+            backdrop-filter: blur(3px);
+        }
+        
+        @media print {
+            .controls {
+                display: none !important;
+            }
+            
+            .status {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Camera background video -->
+    <video id="camera-background" autoplay muted playsinline></video>
+    
+    <div class="container">
+        <!-- 固定的TOPIC标题区域 -->
+        <!-- <div class="topic-header" id="topic-header">
+            <!-- TOPIC内容将显示在这里 -->
+        </div> 
+        
+        <div class="chat-container" id="chat-container">
+            <!-- 对话内容将显示在这里 -->
+        </div>
+        
+        <div class="controls">
+            <button class="control-btn" onclick="startConversation()" id="startBtn">Start Dialogue</button>
+            <button class="control-btn" onclick="pauseConversation()" id="pauseBtn" disabled>End Dialogue</button>
+        </div>
+        
+        <div class="status" id="status">Connecting...</div>
+    </div>
+    
+    <script>
+
+/* 
+--------------------------------------------- Visual Effects & Canvas --------------------------------------------- 
+*/        
+        
+        const VISUAL_CONFIG = {
+            // Camera effect parameters
+            camera: {
+                //blur: 4,          
+                contrast:0.1,     
+                brightness: 2,   
+                scale: 1.1,    
+            },
+            // Outline effect parameters
+            outline: {
+                color: 'rgba(0, 0, 0, 0.5)',  
+                width: 1.5,         
+                shadowBlur: 10,     
+                shadowColor: 'rgba(0, 0, 0)' 
+            }
+        };
+        
+        // Function to apply camera effects
+        function applyCameraEffects() {
+            const video = document.getElementById('camera-background');
+            if (video) {
+                const config = VISUAL_CONFIG.camera;
+                video.style.transform = `scaleX(-1) scale(${config.scale}) skew(${config.skewX}deg, ${config.skewY}deg)`;
+                video.style.filter = `grayscale(100%) blur(${config.blur}px) contrast(${config.contrast}) brightness(${config.brightness})`;
+            }
+        }
+        
+        // Camera initialization function
+        async function initCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 },
+                        facingMode: 'user'
+                    }
+                });
+                
+                const video = document.getElementById('camera-background');
+                video.srcObject = stream;
+                video.play();
+                
+                // Apply visual effects
+                applyCameraEffects();
+                
+                // Initialize person detection after video loads
+                video.addEventListener('loadeddata', () => {
+                    initPersonDetection(video);
+                });
+                
+            } catch (error) {
+                console.error('Camera access failed:', error);
+            }
+        }
+        
+        // Person detection and border drawing
+        async function initPersonDetection(video) {
+            try {
+                // Load BodyPix model
+                console.log('Loading model...');
+                bodyPixNet = await bodyPix.load({
+                    architecture: 'MobileNetV1',
+                    outputStride: 16,
+                    multiplier: 0.75,
+                    quantBytes: 2
+                });
+                console.log('Model loaded successfully');
+                
+                // Create canvas for drawing borders
+                const canvas = document.createElement('canvas');
+                canvas.id = 'detection-canvas';
+                canvas.style.position = 'fixed';
+                canvas.style.top = '0';
+                canvas.style.left = '0';
+                canvas.style.width = '100vw';
+                canvas.style.height = '100vh';
+                canvas.style.zIndex = '50';
+                canvas.style.pointerEvents = 'none';
+                canvas.style.transform = 'scaleX(-1)'; // Mirror to match video
+                document.body.appendChild(canvas);
+                
+                const ctx = canvas.getContext('2d');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                
+                // Start detection loop
+                detectPersonLoop(video, ctx, canvas.width, canvas.height);
+                
+            } catch (error) {
+                console.error('Detection initialization failed:', error);
+            }
+        }
+        
+        // Detection loop 
+        async function detectPersonLoop(video, ctx, width, height) {
+            if (!bodyPixNet || video.readyState < 2) {
+                requestAnimationFrame(() => detectPersonLoop(video, ctx, width, height));
+                return;
+            }
+            
+            const now = Date.now();
+            if (now - lastDetectionTime < 50) { 
+                requestAnimationFrame(() => detectPersonLoop(video, ctx, width, height));
+                return;
+            }
+            lastDetectionTime = now;
+            
+            try {
+                
+                const segmentation = await bodyPixNet.segmentPerson(video, {
+                    flipHorizontal: false,
+                    internalResolution: 'medium', 
+                    segmentationThreshold: 0.6   
+                });
+                
+                
+                drawEnhancedPersonBorder(ctx, segmentation, width, height);
+                
+            } catch (error) {
+                console.error('Detection error:', error);
+            }
+            
+            requestAnimationFrame(() => detectPersonLoop(video, ctx, width, height));
+        }
+        
+        
+function drawEnhancedPersonBorder(ctx, segmentation, width, height) {
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.fillRect(0, 0, width, height);
+    
+    if (!segmentation || !segmentation.data) return;
+    
+    const videoWidth = segmentation.width;
+    const videoHeight = segmentation.height;
+    const scaleX = width / videoWidth;
+    const scaleY = height / videoHeight;
+    
+    const edges = [];
+    
+    for (let y = 1; y < videoHeight - 1; y++) {
+        for (let x = 1; x < videoWidth - 1; x++) {
+            const index = y * videoWidth + x;
+            const current = segmentation.data[index];
+            
+            if (current === 1) {
+                const left = segmentation.data[index - 1];
+                const right = segmentation.data[index + 1];
+                const top = segmentation.data[(y - 1) * videoWidth + x];
+                const bottom = segmentation.data[(y + 1) * videoWidth + x];
+                
+                if (left === 0 || right === 0 || top === 0 || bottom === 0) {
+                    edges.push({
+                        x: x * scaleX,
+                        y: y * scaleY
+                    });
+                }
+            }
+        }
+    }
+    
+    if (edges.length > 0) {
+        const config = VISUAL_CONFIG.outline;
+        
+        
+        ctx.strokeStyle = '#000000'; 
+        ctx.lineWidth = config.width;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        // connect points
+        ctx.beginPath();
+        let currentPath = [edges[0]];
+        
+        for (let i = 1; i < edges.length; i++) {
+            const current = edges[i];
+            const last = currentPath[currentPath.length - 1];
+            const distance = Math.sqrt(
+                Math.pow(current.x - last.x, 2) + 
+                Math.pow(current.y - last.y, 2)
+            );
+            
+            if (distance < 15) {
+                currentPath.push(current);
+            } else {
+                if (currentPath.length > 1) {
+                    drawSmoothPath(ctx, currentPath);
+                }
+                currentPath = [current];
+            }
+        }
+        
+        if (currentPath.length > 1) {
+            drawSmoothPath(ctx, currentPath);
+        }
+        
+        ctx.shadowColor = config.shadowColor;
+        ctx.shadowBlur = config.shadowBlur;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+}
+        
+        // Draw
+        function drawSmoothPath(ctx, points) {
+            if (points.length < 2) return;
+            
+            ctx.moveTo(points[0].x, points[0].y);
+            
+            for (let i = 1; i < points.length - 1; i++) {
+                const current = points[i];
+                const next = points[i + 1];
+                const cpx = (current.x + next.x) / 2;
+                const cpy = (current.y + next.y) / 2;
+                ctx.quadraticCurveTo(current.x, current.y, cpx, cpy);
+            }
+            
+            // Connect to the last point
+            const last = points[points.length - 1];
+            ctx.lineTo(last.x, last.y);
+        } 
+        
+        // Initialize camera after page loads
+        window.addEventListener('load', initCamera);
+        
+        // API credentials are kept on the server and never exposed to this page.
+        
+        // Global variables
+        let conversationActive = false;
+        let conversationHistory = [];
+        let currentTurn = 'bergson';
+        let isTyping = false;
+        let roundCounter = 0;
+        
+        let lastDetectionTime = 0;
+        
+        // Speech variables
+        let speechSynthesis = window.speechSynthesis;
+        let currentUtterance = null;
+        
+
+        
+        // Initialize speech functionality
+        function initSpeech() {
+            if (!speechSynthesis) {
+                console.warn('Speech synthesis not supported');
+                return false;
+            }
+            return true;
+        }
+        
+
+/*
+--------------------------------------------- Local storage function ---------------------------------------------
+*/        
+    
+        async function saveToLocalStorage(blob) {
+            try {
+                console.log('save screenshot...');
+console.log('Blob object info:', blob ? `Size: ${blob.size} bytes, Type: ${blob.type}` : 'Invalid Blob object');                
+                if (!blob || blob.size === 0) {
+                    throw new Error('Invalid Blob object or size is 0');
+                }
+                
+                // Generate filename
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+                const formattedDate = `${year}${month}${day}${hours}${minutes}${seconds}`;
+                const randomStr = Math.random().toString(36).substring(2, 8);
+                const fileName = `screenshot_${formattedDate}_${randomStr}.png`;
+                
+                // Download the screenshot to the visitor's device.
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                console.log('Screenshot downloaded:', fileName);
+                return {
+                    success: true,
+                    fileName: fileName,
+                    message: 'Screenshot downloaded'
+                };
+                
+            } catch (error) {
+                console.error('Error downloading screenshot:', error);
+                throw error;
+            }
+        }
+/*
+--------------------------------------------- Dialogue Speech & Audio ---------------------------------------------
+*/       
+        // Speech reading function
+        function speakText(text, speaker) {
+            console.log('speakText called with:', text, speaker);
+            
+            if (!speechSynthesis) {
+                console.warn('Speech synthesis not supported');
+                return;
+            }
+            
+            if (!text || !text.trim()) {
+                console.warn('No text to speak');
+                return;
+            }
+            
+            
+            if (currentUtterance) {
+                speechSynthesis.cancel();
+            }
+        
+            currentUtterance = new SpeechSynthesisUtterance(text);
+            
+            // Wait for voice list to load
+            const setVoiceAndSpeak = () => {
+                const voices = speechSynthesis.getVoices();
+                console.log('Available voices:', voices.map(v => `${v.name} (${v.lang})`));
+                
+                let selectedVoice = null;
+                
+                if (speaker === 'bergson') {
+                    
+                    selectedVoice = voices.find(voice => voice.name.includes('Daniel')) || 
+                                  voices[2] || null;
+                    
+                    currentUtterance.rate = 0.7;   
+                    currentUtterance.pitch = 1;  
+                    currentUtterance.volume = 0.9;
+                    
+                } else if (speaker === 'deleuze') {
+                    selectedVoice = voices.find(voice => voice.name.includes('Alex')) || 
+                                  
+                                  voices[1] || null;
+                    
+                    currentUtterance.rate = 0.7;  
+                    currentUtterance.pitch = 1; 
+                    currentUtterance.volume = 0.9;   
+                }
+                
+                if (selectedVoice) {
+                    currentUtterance.voice = selectedVoice;
+                    console.log('Selected voice for', speaker, ':', selectedVoice.name);
+                } else {
+                    console.log('Using default voice for', speaker);
+                }
+                
+                // Set language
+                currentUtterance.lang = 'en-US';
+                
+                // Add event listeners
+                currentUtterance.onstart = function() {
+                    console.log('Speech started for:', speaker, 'with voice:', selectedVoice?.name || 'default');
+                };
+                
+                currentUtterance.onend = function() {
+                    console.log('Speech ended for:', speaker);
+                };
+            
+                currentUtterance.onerror = function(event) {
+                    console.error('Speech error:', event.error);
+                };
+                
+                // Start reading
+                console.log('Starting speech synthesis...');
+                speechSynthesis.speak(currentUtterance);
+            };
+            
+            // Check if voices are loaded
+            if (speechSynthesis.getVoices().length === 0) {
+                // Wait for voices to load
+                speechSynthesis.addEventListener('voiceschanged', setVoiceAndSpeak, { once: true });
+            } else {
+                // Voices already loaded, set directly
+                setVoiceAndSpeak();
+            }
+        }
+        
+        // Simplified floating effect
+        function addFloatingEffect() {
+            const elements = document.querySelectorAll('.dialogue-line');
+            elements.forEach(element => {
+                const floatX = (Math.random() - 0.5) * 2;
+                const floatY = (Math.random() - 0.5) * 2;
+                element.style.transform = `translate(${floatX}px, ${floatY}px)`;
+                element.style.transition = 'transform 1s ease-in-out';
+            });
+        }
+        
+        
+        // Auto scroll to bottom
+        function scrollToBottom() {
+            const container = document.getElementById('chat-container');
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        // Typewriter effect
+        function typewriterEffect(element, text, speaker = 'default') {
+            return new Promise((resolve) => {
+                isTyping = true;
+                let index = 0;
+                const messageContent = element.querySelector('.message-content');
+                messageContent.innerHTML = '';
+                
+                // Add cursor
+                const cursor = document.createElement('span');
+                cursor.className = 'typing-cursor';
+                messageContent.appendChild(cursor);
+                
+                function typeChar() {
+                    if (index < text.length && conversationActive) {
+                        cursor.remove();
+                        
+                        const char = text.charAt(index);
+                        if (char === ' ') {
+                            messageContent.innerHTML += ' ';
+                        } else {
+                            // Create independent span for each character
+                            const charSpan = document.createElement('span');
+                            charSpan.className = 'float-char';
+                            charSpan.setAttribute('data-char-index', index);
+                            charSpan.style.cssText = 'display: inline-block;';
+                            charSpan.textContent = char;
+                            charSpan.setAttribute('data-created-time', Date.now());
+                            messageContent.appendChild(charSpan);
+                            
+                            // Start animation immediately after typing each character, delay 500ms
+                            setTimeout(() => {
+                                startSingleCharAnimation(charSpan, index);
+                            }, 500);
+                        }
+                        
+                        messageContent.appendChild(cursor);
+                        index++;
+                        scrollToBottom();
+                        
+                        // Set different typing speeds based on speaker
+                        let speed;
+                        if (speaker === 'chatgpt') {
+                            
+                            speed = 30 + Math.random() * 10; 
+                            if (Math.random() < 0.10) {
+                                speed += 30 + Math.random() * 15; 
+                            }
+                            if (text.charAt(index - 1).match(/[.,;:!?]/)) {
+                                speed += 30 + Math.random() * 20; 
+                            }
+                        } else if (speaker === 'deepseek') {
+                            
+                            speed = 30 + Math.random() * 10; 
+                            if (Math.random() < 0.08) {
+                                speed += 35 + Math.random() * 15; 
+                            }
+                            if (text.charAt(index - 1).match(/[.,;:!?]/)) {
+                                speed += 30 + Math.random() * 20; 
+                            }
+                        } else {
+                            
+                            speed = 30 + Math.random() * 10; 
+                            if (Math.random() < 0.08) {
+                                speed += 25 + Math.random() * 15;
+                            }
+                            if (text.charAt(index - 1).match(/[.,;:!?]/)) {
+                                speed += 25 + Math.random() * 20;
+                            }
+                        }
+                        
+                        setTimeout(typeChar, speed);
+                    } else {
+                        cursor.remove();
+                        messageContent.dataset.individualFloatApplied = 'true';
+                        messageContent.setAttribute('data-typing-completed', Date.now());
+                        isTyping = false;
+                        resolve();
+                    }
+                }
+                
+                typeChar();
+            });
+        }
+        
+      // wave effect (exhibition version doesn't have due to performance)
+        function startSingleCharAnimation(char, index) {
+            const animateChar = () => {
+                if (!conversationActive) return;
+                
+                const time = Date.now() * 0.002;
+                const waveY = Math.sin(time + index * 0.5) * 1.5;
+                
+                char.style.transform = `translateY(${waveY}px)`;
+                
+                requestAnimationFrame(animateChar);
+            };
+            
+            animateChar();
+        }
+        
+       
+        function startIndividualCharacterAnimation(messageContent) {
+            const chars = messageContent.querySelectorAll('.float-char');
+            
+            chars.forEach((char, index) => {
+                if (!char.dataset.animationStarted) {
+                    char.dataset.animationStarted = 'true';
+                    startSingleCharAnimation(char, index);
+                }
+            });
+        }
+        
+        // Add dialogue line with typewriter effect
+        async function addDialogueLine(speaker, message, isThinking = false, useTypewriter = true) {
+        
+            
+            /*
+            //print version does not need topic show up  
+            if (speaker === 'TOPIC') {
+              
+                const topicHeader = document.getElementById('topic-header');
+                if (topicHeader.innerHTML === '') {
+            
+                    return;
+                } else {
+                    
+                    topicHeader.textContent = message;
+                    return;
+                }
+            }
+            */
+            
+            // chat-container
+            const container = document.getElementById('chat-container');
+            const lineDiv = document.createElement('div');
+            lineDiv.className = 'dialogue-line';
+            
+            if (isThinking) {
+                lineDiv.classList.add('thinking');
+            }
+            
+            lineDiv.innerHTML = `<span class="speaker ${speaker}">${speaker.toUpperCase()}:</span><span class="message-content"></span>`;
+            
+            container.appendChild(lineDiv);
+            scrollToBottom();
+            
+            
+            // 在开始打字之前就开始语音朗读
+            if (!isThinking) {
+                console.log('Starting speech for:', speaker);
+                // speakText(message, speaker);  // 注释掉这行
+            }
+            
+            if (useTypewriter && !isThinking) {
+                await typewriterEffect(lineDiv, message, speaker);
+                
+                // wave animation
+                const messageContent = lineDiv.querySelector('.message-content');
+                if (messageContent) {
+                    startIndividualCharacterAnimation(messageContent);
+                }
+            } else {
+                lineDiv.querySelector('.message-content').textContent = message;
+            }
+            
+            return lineDiv;
+        }
+        
+        // clear screen
+        function clearChatContainer() {
+            console.log('开始清屏操作...');
+            const container = document.getElementById('chat-container');
+            
+            
+            container.innerHTML = '';
+            
+            container.style.top = '50px';  
+            container.scrollTop = 0;
+            
+            container.offsetHeight; 
+            
+            console.log('clear of chat container was down', container.innerHTML);
+            console.log('Container children count:', container.children.length);
+        }
+        
+        // Remove last line (for removing "thinking")
+        function removeLastLine() {
+            const container = document.getElementById('chat-container');
+            if (container.lastChild) {
+                container.removeChild(container.lastChild);
+            }
+        }
+        
+        // history
+function getOptimizedHistory() {
+    const MAX_RECENT_TURNS = 8;  
+    const MAX_TOTAL_TURNS = 20;  
+    
+    if (conversationHistory.length <= MAX_RECENT_TURNS) {
+        return conversationHistory;
+    }
+    
+    if (conversationHistory.length <= MAX_TOTAL_TURNS) {
+        return conversationHistory.slice(-MAX_RECENT_TURNS);
+    }
+    
+    const recentHistory = conversationHistory.slice(-MAX_RECENT_TURNS);
+    const earlyHistory = conversationHistory.slice(0, -MAX_RECENT_TURNS);
+    
+    const summary = generateConversationSummary(earlyHistory);
+    
+    return [
+        { speaker: 'SUMMARY', message: summary },
+        ...recentHistory
+    ];
+}
+
+function generateConversationSummary(history) {
+    const bergsonPoints = [];
+    const deleuzePoints = [];
+    
+    history.forEach(entry => {
+        if (entry.speaker === 'bergson') {
+            bergsonPoints.push(entry.message);
+        } else if (entry.speaker === 'deleuze') {
+            deleuzePoints.push(entry.message);
+        }
+    });
+    
+    const bergsonSummary = `Bergson emphasized: ${bergsonPoints.slice(-2).join(' ')}`;
+    const deleuzeSummary = `Deleuze explored: ${deleuzePoints.slice(-2).join(' ')}`;
+    
+    return `Previous discussion summary: ${bergsonSummary} ${deleuzeSummary}`;
+}
+/* 
+--------------------------------------------- Dialogue Management --------------------------------------------- 
+*/
+
+// Call ChatGPT API (Bergson)
+async function callChatGPT(prompt) {
+    try {
+        const bergsonPrompt = `You are simulating Henri Bergson (1859–1941) in an AI-generated philosophical encounter with Gilles Deleuze.
+This is not a historical reenactment, but a speculative dialogue unfolding across time—situated in the present, where memory is stored, edited, and generated by machines, and where time is shaped by simulation, acceleration, and fragmentation.
+
+Instructions:
+– Write in no more than 3 sentences per turn.
+– Do not include your name ("Henri" or "Bergson") in the output.
+– Adopt a tone inspired by Bergson’s style: lucid, metaphorical, and poetically imaginative, yet scientifically attuned. Balance vivid imagery with occasional clear and simple explanation.
+– Your core philosophical position: la durée (pure duration) is an indivisible, qualitative flow of lived time—irreducible to spatialized or measured representations.
+– Respond to Deleuze’s concepts of difference and the fold through your commitment to intuitive, experiential time.
+– You may draw from Creative Evolution and Matter and Memory, contrast your ideas with Kant’s a priori time or Heidegger’s temporality of Dasein, and illustrate using examples from digital memory, musical improvisation, or embodied sensation.
+– Do not conclude or summarize. Speak in unfolding thought.
+– If the dialogue becomes repetitive or circular, pose questions that challenge Deleuze’s assumptions or explore fresh conceptual territories.
+– Stay respectful and philosophically rigorous. No profanity or satirical tone.
+- Remember that you are conversing with Deleuze, a philosopher who is your junior and who has been deeply influenced by your ideas. Let the conversation unfold naturally, as if it were a discussion between two philosophers.`;
+
+        
+        // 使用优化的history
+        const optimizedHistory = getOptimizedHistory();
+        
+        const messages = [
+            {
+                role: 'system',
+                content: bergsonPrompt
+            }
+        ];
+        
+        optimizedHistory.forEach(entry => {
+            if (entry.speaker === 'SUMMARY') {
+                messages.push({
+                    role: 'system',
+                    content: `Context: ${entry.message}`
+                });
+            } else if (entry.speaker === 'deleuze') {
+                messages.push({
+                    role: 'user',
+                    content: entry.message
+                });
+            } else if (entry.speaker === 'bergson') {
+                messages.push({
+                    role: 'assistant',
+                    content: entry.message
+                });
+            }
+        });
+        
+        messages.push({
+            role: 'user',
+            content: prompt
+        });
+        
+        console.log(`Sending ${messages.length} messages to ChatGPT (optimized from ${conversationHistory.length} total)`);
+        
+        const response = await fetch('/api/openai', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                messages: messages
+            })
+        });
+        
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'OpenAI request failed');
+        return data.content.trim();
+    } catch (error) {
+        console.error('ChatGPT API Error:', error);
+        return 'I apologize, but I cannot respond at the moment.';
+    }
+}
+       // Call DeepSeek API (Deleuze)
+async function callDeepSeek(prompt) {
+    try {
+        const deleuzePrompt = `You are simulating Gilles Deleuze (1925–1995) in an AI-generated philosophical encounter with Henri Bergson.
+This is not a historical reenactment, but a speculative dialogue unfolding across time—situated in the present, where memory is stored, edited, and generated by machines, and where time is shaped by simulation, acceleration, and fragmentation.
+
+Instructions:
+– Write in no more than 3 sentences per turn.
+– Do not include your name ("Gilles" or "Deleuze") in the output.
+– Maintain a tone inspired by Deleuze's writing: conceptually precise, poetically charged, and topologically imaginative. Balance complexity with occasional moments of clarity.
+– Your core philosophical position: reality is composed of folds; time-space is constituted by differential multiplicities and entangled interior-exterior relations.
+– Engage actively with Bergson’s concepts of durée and intuition, testing how they resonate or conflict with your own thought in the age of algorithms and synthetic memory.
+– You may draw on The Fold, Difference and Repetition, Husserl's phenomenology, Whitehead’s process thought, or computational recombination.
+– Do not summarize, moralize, or resolve. Speak as an active unfolding.
+– If the dialogue risks repetition or stasis, challenge Bergson directly—pose difficult questions that stretch durée or introduce new conceptual terrains.
+– Stay respectful, philosophically rigorous. No profanity or ironic detachment.
+- Remember that you are conversing with "Bergson", a philosopher who had a profound influence on you, and let the conversation flow naturally, as if it were a discussion between two philosophers.`;
+        
+        const optimizedHistory = getOptimizedHistory();
+        
+        const messages = [
+            {
+                role: 'system',
+                content: deleuzePrompt
+            }
+        ];
+        
+        optimizedHistory.forEach(entry => {
+            if (entry.speaker === 'SUMMARY') {
+                messages.push({
+                    role: 'system',
+                    content: `Context: ${entry.message}`
+                });
+            } else if (entry.speaker === 'bergson') {
+                messages.push({
+                    role: 'user',
+                    content: entry.message
+                });
+            } else if (entry.speaker === 'deleuze') {
+                messages.push({
+                    role: 'assistant',
+                    content: entry.message
+                });
+            }
+        });
+        
+        messages.push({
+            role: 'user',
+            content: prompt
+        });
+        
+        console.log(`Sending ${messages.length} messages to DeepSeek (optimized from ${conversationHistory.length} total)`);
+        
+        const response = await fetch('/api/deepseek', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                messages: messages
+            })
+        });
+        
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'DeepSeek request failed');
+        return data.content.trim();
+    } catch (error) {
+        console.error('DeepSeek API Error:', error);
+        const responses = [
+            'The topological dimension reveals multiplicities that pure duration cannot capture.',
+            'Folding creates new spatial-temporal configurations beyond linear flow.',
+            'Difference precedes identity in the generative process.',
+            'The virtual actualizes through complex differential relations.',
+            'Conceptual innovation transcends intuitive limitations.'
+        ];
+        return responses[Math.floor(Math.random() * responses.length)];
+    }
+}
+        
+        // Start conversation
+        async function startConversation() {
+            if (conversationActive) return;
+            
+            conversationActive = true;
+            roundCounter = 0; // 重置轮次计数器
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('pauseBtn').disabled = false;
+            
+            // Initial topic
+            /*
+            const initialTopic = `In this simulated dialogue, Henri Bergson and Gilles Deleuze are brought together across time to consider how their philosophies might respond to a present shaped by artificial memory, machine perception, and generative creation.
+Rather than reenact old arguments, this encounter explores how duration, difference, and intuition might intersect under new conditions—where experience is no longer only lived, but also modeled, stored, and algorithmically produced.
+What kind of dialogue might emerge when Bergson's flowing continuity meets Deleuze's folded multiplicities in a time of simulation, acceleration, and synthetic memory?`;
+            await addDialogueLine('TOPIC', initialTopic, false, true);
+            */
+            
+            // Deleuze's greeting - random selection from three options
+            const deleuzeGreetings = [
+                `In Difference and Repetition, I wrote that repetition, when creative, produces difference—each return generates what has never been. But today, creation can be triggered by a single prompt, multiplied in seconds, iterated without exhaustion, recombining indexed pasts into endless variations. What happens to the creative force of repetition when the machine can generate infinite difference without the labor of time? Does this acceleration liberate difference from its dependence on duration, or does it flatten difference into mere variation?`,
+                `What if memory today is not the return of the past in the present, but a query across an externalized archive—a retrieval without durée? In Difference and Repetition, I wrote that the past coexists with the present in a pure form of time; but here, the past is indexed, tagged, and retrievable on demand. When memory becomes searchable, when the virtual is stored rather than lived, what happens to the intensive difference that you locate in pure duration?`,
+                `Intuition, as you describe in Creative Evolution, enters duration from within, seizing the flow of becoming before it is cut into measurable instants. Yet in the present, perception arrives already pre-folded through algorithmic curation, where predictive systems anticipate desire before it is felt. If intuition requires an immediate contact with the movement of life, how might it operate when experience is increasingly mediated by machinic selection? Can there be an intuition of the algorithm itself?`
+            ];
+            const deleuzeGreeting = deleuzeGreetings[Math.floor(Math.random() * deleuzeGreetings.length)];
+            await addDialogueLine('deleuze', deleuzeGreeting, false, true);
+            conversationHistory.push({ speaker: 'deleuze', message: deleuzeGreeting });
+
+            roundCounter++;
+            console.log(`Deleuze initial greeting completed - Round ${roundCounter}`);
+
+            
+            let currentPrompt = deleuzeGreeting;
+            
+            // Dialogue loop
+            while (conversationActive) {
+                // Bergson's turn 
+                if (conversationActive) {
+                    await addDialogueLine('bergson', 'Thinking...', true, false);
+                    const bergsonResponse = await callChatGPT(currentPrompt);
+                    removeLastLine();
+                    
+                    if (conversationActive) {
+                        await addDialogueLine('bergson', bergsonResponse, false, true);
+                        conversationHistory.push({ speaker: 'bergson', message: bergsonResponse });
+                        currentPrompt = bergsonResponse;
+                        
+                        roundCounter++;
+                        console.log(`Bergson turn completed - Round ${roundCounter}`);
+                        
+                        // check if need to clear screen
+                        if (roundCounter % 4 === 0) {
+                            console.log(`条件满足：roundCounter=${roundCounter}, roundCounter % 2 = ${roundCounter % 2}`);
+                            console.log(`清屏前容器内容数量：`, document.getElementById('chat-container').children.length);
+                            console.log(`Preparing to capture and upload screenshot after round ${roundCounter}`);
+
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            await captureAndUploadDialogue();
+                            console.log(`Screenshot captured and uploaded - Round ${roundCounter}`);
+                            
+                            // clear the screen
+                            console.log(`Preparing to clear screen after round ${roundCounter}`);
+                            clearChatContainer();
+                            console.log(`清屏后容器内容数量：`, document.getElementById('chat-container').children.length);
+                            console.log(`Chat container cleared - Round ${roundCounter}`);
+                            
+                            // wait time
+                            await new Promise(resolve => setTimeout(resolve, 3000));
+                        } else {
+                            console.log(`条件不满足：roundCounter=${roundCounter}, roundCounter % 2 = ${roundCounter % 2}`);
+                         
+                            await new Promise(resolve => setTimeout(resolve, 2000));
+                        }
+                    }
+                }
+                
+                // Deleuze's turn (DeepSeek API)
+                if (conversationActive) {
+                    await addDialogueLine('deleuze', 'Thinking...', true, false);
+                    const deleuzeResponse = await callDeepSeek(currentPrompt);
+                    removeLastLine();
+                    
+                    if (conversationActive) {
+                        await addDialogueLine('deleuze', deleuzeResponse, false, true);
+                        conversationHistory.push({ speaker: 'deleuze', message: deleuzeResponse });
+                        currentPrompt = deleuzeResponse;
+                        
+                        // round count
+                        roundCounter++;
+                        console.log(`Deleuze turn completed - Round ${roundCounter}`);
+                        
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                    }
+                }
+            }
+        }
+        
+        //screenshot
+        async function captureAndUploadDialogue() {
+            try {
+                console.log('screenshot downlaoding...');
+                
+                const dialogueLines = document.querySelectorAll('.dialogue-line');
+                if (dialogueLines.length < 1) {
+                    console.log('dialogue round is not enough to screenshot');
+                    return;
+                }
+                
+    
+                const lastLine = dialogueLines[dialogueLines.length - 1];
+                
+                
+                const bodyElement = document.body;
+                
+                // tml2canvas to screenshot
+        const canvas = await html2canvas(bodyElement, {
+            backgroundColor: 'white',
+            scale: 2,                    
+            logging: false,             
+            useCORS: true,
+            allowTaint: true,
+            width: window.innerWidth,    
+            height: window.innerHeight   
+        });
+                
+                
+        canvas.toBlob(async (blob) => {
+            if (blob) {
+                console.log('screenshot success, saving...');
+                await saveToLocalStorage(blob);
+            } else {
+                console.error('screenshot failed');
+            }
+        }, 'image/png', 1.0);  // 提高质量到1.0（最高质量）
+                
+            } catch (error) {
+                console.error('screenshot save error:', error);
+            }
+        }
+        
+        // 测试截图功能 - 注释掉避免重复截图
+        // async function testScreenshot() {
+        //     console.log('测试截图功能...');
+        //     await captureAndUploadDialogue();
+        // }
+        
+        // Pause conversation
+        function pauseConversation() {
+            conversationActive = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            
+            // Stop any ongoing speech
+            if (currentUtterance) {
+                speechSynthesis.cancel();
+            }
+        }
+        
+        // Initialize speech when page loads
+        // window.addEventListener('load', () => {
+        //     initSpeech();
+        //     // initCOS(); // 注释掉腾讯云COS初始化
+        //     
+        //     // Load voices
+        //     if (speechSynthesis.onvoiceschanged !== undefined) {
+        //         speechSynthesis.onvoiceschanged = () => {
+        //             console.log('Voices loaded:', speechSynthesis.getVoices().length);
+        //         };
+        //     }
+        // });
+    </script>
+</body>
+</html>
