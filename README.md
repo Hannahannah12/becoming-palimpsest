@@ -1,19 +1,15 @@
 # Becoming Palimpsest (2025)
 
-**Becoming Palimpsest** is an interactive web installation created by Xiaohan Sun in 2025. It turns text, image, and bodily presence into a layered field of memory. AI-generated language appears and shifts on screen while the viewer's silhouette is translated into moving visual traces, creating a palimpsest-like surface where nothing fully disappears.
+**Becoming Palimpsest** is an interactive web installation created by Xiaohan Sun in 2025. It turns text, image, and bodily presence into a layered field of memory.
 
-## Exhibitions
-
-- *Kairós: Between Choice and Fate*, Batsford Gallery, London, UK, 2025
-- *hey, cyborg*, 67 York Street Gallery, London, UK, 2025
-- *Goldsmiths MFA Computational Degree Show R.A.W: Request, Activate, Write*, London, UK, 2025
+AI-generated language appears and shifts on screen while the viewer's silhouette is translated into moving visual traces. These traces continually cover, disturb, and reveal what came before, creating a palimpsest-like surface where nothing fully disappears.
 
 ## Technical notes
 
-- Body detection and camera processing run locally in the visitor's browser.
-- Screenshots are downloaded to the visitor's device and are not uploaded.
-- Dialogue requests use secure server-side endpoints for OpenAI and DeepSeek.
-- API keys are stored only as deployment environment variables and are never included in this repository.
+- Body detection and camera processing run locally in the visitor's browser
+- Screenshots are downloaded to the visitor's device and are not uploaded
+- Dialogue requests use secure server-side endpoints for OpenAI and DeepSeek
+- API keys are stored only as deployment environment variables and are never included in this repository
 
 ## Running the work
 
@@ -21,7 +17,13 @@ Import this repository into Vercel, then add `OPENAI_API_KEY` and `DEEPSEEK_API_
 
 ## More information
 
-Artwork page: [xiaohan-sun.com/becoming-palimpsest](https://xiaohan-sun.com/becoming-palimpsest)
+Exhibited in:
+
+- *Kairós: Between Choice and Fate*, Batsford Gallery, London, UK, 2025
+- *hey, cyborg*, 67 York Street Gallery, London, UK, 2025
+- *Goldsmiths MFA Computational Degree Show R.A.W: Request, Activate, Write*, London, UK, 2025
+
+Project page: [xiaohan-sun.com/becoming-palimpsest](https://xiaohan-sun.com/becoming-palimpsest)
 
 ## Rights
 
