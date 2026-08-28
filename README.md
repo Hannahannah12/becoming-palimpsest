@@ -1,6 +1,12 @@
 # Becoming Palimpsest (2025)
 
-**Becoming Palimpsest** is an interactive artwork created by Xiaohan Sun in 2025. It stages an AI-generated philosophical encounter between Henri Bergson and Gilles Deleuze, exploring memory, duration, difference, and machine-generated time.
+**Becoming Palimpsest** is an interactive web installation created by Xiaohan Sun in 2025. It turns text, image, and bodily presence into a layered field of memory. AI-generated language appears and shifts on screen while the viewer's silhouette is translated into moving visual traces, creating a palimpsest-like surface where nothing fully disappears.
+
+## Exhibitions
+
+- *Kairós: Between Choice and Fate*, Batsford Gallery, London, UK, 2025
+- *hey, cyborg*, 67 York Street Gallery, London, UK, 2025
+- *Goldsmiths MFA Computational Degree Show R.A.W: Request, Activate, Write*, London, UK, 2025
 
 ## Technical notes
 
@@ -15,7 +21,7 @@ Import this repository into Vercel, then add `OPENAI_API_KEY` and `DEEPSEEK_API_
 
 ## More information
 
-Project page: [xiaohan-sun.com/becoming-palimpsest](https://xiaohan-sun.com/becoming-palimpsest)
+Artwork page: [xiaohan-sun.com/becoming-palimpsest](https://xiaohan-sun.com/becoming-palimpsest)
 
 ## Rights
 
