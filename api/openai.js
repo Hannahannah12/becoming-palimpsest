@@ -1,4 +1,3 @@
-/opt/homebrew/Library/Homebrew/cmd/shellenv.sh: line 18: /bin/ps: Operation not permitted
 import { allowRequest, readJson, setSecurityHeaders, validateMessages } from './_shared.js';
 
 export default async function handler(request, response) {
