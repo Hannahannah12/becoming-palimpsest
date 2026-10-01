@@ -41,13 +41,32 @@ Optimized for print documentation and local archiving.
             box-sizing: border-box;
         }
         
+        /* Typography and spacing scale together; the stage fills either orientation. */
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: white;
+        }
+
+        #artwork-stage {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1920px;
+            height: 1080px;
+            transform-origin: top left;
+            overflow: hidden;
+            isolation: isolate;
+        }
+
         /* Camera background styles */
         #camera-background {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
             object-fit: cover;
             z-index: -1;
             transform: scaleX(-1) scale(1.1) skew(1deg, 0.5deg);
@@ -289,14 +308,12 @@ Optimized for print documentation and local archiving.
     </style>
 </head>
 <body>
+    <main id="artwork-stage" aria-label="Becoming Palimpsest">
     <!-- Camera background video -->
     <video id="camera-background" autoplay muted playsinline></video>
     
     <div class="container">
-        <!-- 固定的TOPIC标题区域 -->
-        <!-- <div class="topic-header" id="topic-header">
-            <!-- TOPIC内容将显示在这里 -->
-        </div> 
+        <!-- Topic header is intentionally hidden. -->
         
         <div class="chat-container" id="chat-container">
             <!-- 对话内容将显示在这里 -->
@@ -310,6 +327,8 @@ Optimized for print documentation and local archiving.
         <div class="status" id="status">Connecting...</div>
     </div>
     
+    </main>
+    <script src="/display.js"></script>
     <script>
 
 /* 
@@ -390,19 +409,19 @@ Optimized for print documentation and local archiving.
                 canvas.style.position = 'fixed';
                 canvas.style.top = '0';
                 canvas.style.left = '0';
-                canvas.style.width = '100vw';
-                canvas.style.height = '100vh';
+                canvas.style.width = '100%';
+                canvas.style.height = '100%';
                 canvas.style.zIndex = '50';
                 canvas.style.pointerEvents = 'none';
                 canvas.style.transform = 'scaleX(-1)'; // Mirror to match video
-                document.body.appendChild(canvas);
+                document.getElementById('artwork-stage').appendChild(canvas);
                 
                 const ctx = canvas.getContext('2d');
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
+                canvas.width = ArtworkDisplay.width;
+                canvas.height = ArtworkDisplay.height;
                 
                 // Start detection loop
-                detectPersonLoop(video, ctx, canvas.width, canvas.height);
+                detectPersonLoop(video, ctx);
                 
             } catch (error) {
                 console.error('Detection initialization failed:', error);
@@ -410,15 +429,15 @@ Optimized for print documentation and local archiving.
         }
         
         // Detection loop 
-        async function detectPersonLoop(video, ctx, width, height) {
+        async function detectPersonLoop(video, ctx) {
             if (!bodyPixNet || video.readyState < 2) {
-                requestAnimationFrame(() => detectPersonLoop(video, ctx, width, height));
+                requestAnimationFrame(() => detectPersonLoop(video, ctx));
                 return;
             }
             
             const now = Date.now();
             if (now - lastDetectionTime < 50) { 
-                requestAnimationFrame(() => detectPersonLoop(video, ctx, width, height));
+                requestAnimationFrame(() => detectPersonLoop(video, ctx));
                 return;
             }
             lastDetectionTime = now;
@@ -432,13 +451,13 @@ Optimized for print documentation and local archiving.
                 });
                 
                 
-                drawEnhancedPersonBorder(ctx, segmentation, width, height);
+                drawEnhancedPersonBorder(ctx, segmentation, ctx.canvas.width, ctx.canvas.height);
                 
             } catch (error) {
                 console.error('Detection error:', error);
             }
             
-            requestAnimationFrame(() => detectPersonLoop(video, ctx, width, height));
+            requestAnimationFrame(() => detectPersonLoop(video, ctx));
         }
         
         
@@ -450,8 +469,10 @@ function drawEnhancedPersonBorder(ctx, segmentation, width, height) {
     
     const videoWidth = segmentation.width;
     const videoHeight = segmentation.height;
-    const scaleX = width / videoWidth;
-    const scaleY = height / videoHeight;
+    // Match object-fit: cover on the camera: crop equally, never stretch a body.
+    const cameraScale = Math.max(width / videoWidth, height / videoHeight);
+    const offsetX = (width - videoWidth * cameraScale) / 2;
+    const offsetY = (height - videoHeight * cameraScale) / 2;
     
     const edges = [];
     
@@ -468,8 +489,8 @@ function drawEnhancedPersonBorder(ctx, segmentation, width, height) {
                 
                 if (left === 0 || right === 0 || top === 0 || bottom === 0) {
                     edges.push({
-                        x: x * scaleX,
-                        y: y * scaleY
+                        x: x * cameraScale + offsetX,
+                        y: y * cameraScale + offsetY
                     });
                 }
             }
@@ -1186,17 +1207,31 @@ What kind of dialogue might emerge when Bergson's flowing continuity meets Deleu
                 const lastLine = dialogueLines[dialogueLines.length - 1];
                 
                 
-                const bodyElement = document.body;
+                const stageElement = document.getElementById('artwork-stage');
+                const captureWidth = ArtworkDisplay.width;
+                const captureHeight = ArtworkDisplay.height;
                 
                 // tml2canvas to screenshot
-        const canvas = await html2canvas(bodyElement, {
+        const canvas = await html2canvas(stageElement, {
             backgroundColor: 'white',
-            scale: 2,                    
+            // Bound the longest PNG edge on unusually wide/tall screens.
+            scale: Math.min(2, 3840 / Math.max(captureWidth, captureHeight)),
             logging: false,             
             useCORS: true,
             allowTaint: true,
-            width: window.innerWidth,    
-            height: window.innerHeight   
+            width: captureWidth,
+            height: captureHeight,
+            windowWidth: Math.round(captureWidth),
+            windowHeight: Math.round(captureHeight),
+            onclone: (clonedDocument) => {
+                const stage = clonedDocument.getElementById('artwork-stage');
+                stage.style.left = '0px';
+                stage.style.top = '0px';
+                // Keep a containing block for fixed camera/controls in the clone.
+                stage.style.transform = 'scale(1)';
+                stage.style.width = `${captureWidth}px`;
+                stage.style.height = `${captureHeight}px`;
+            }
         });
                 
                 

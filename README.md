@@ -52,3 +52,13 @@ Camera processing occurs locally in the visitor's browser. Images are not upload
 Implementation references: [Upstash REST API](https://upstash.com/docs/redis/features/restapi), [Vercel request headers](https://vercel.com/docs/headers/request-headers). Outside Vercel, rate limiting uses the socket address instead of trusting arbitrary forwarded headers.
 
 Run regression tests with `npm test` (Node.js 20 or newer). Tests mock provider/storage calls and incur no AI usage fees.
+
+## Display scaling
+
+The work fills the browser viewport in portrait, landscape, square and ultrawide displays. Typography, spacing, buttons and character animation distances scale together using the shorter viewport edge relative to 1080 CSS pixels. At 1920 × 1080 the original sizes are retained; at 3840 × 2160 or 2160 × 3840 they render at 2×. OS display scaling can make CSS pixels differ from a monitor's hardware pixels.
+
+The layout adapts to the aspect ratio: portrait screens show narrower, taller dialogue with natural line wrapping, while landscape screens show wider lines. The work has no fixed landscape frame or outer letterboxing. Camera imagery and silhouette coordinates use proportional cover scaling, so the image fills the screen without stretching people (camera edges may be cropped when screen and camera aspect ratios differ).
+
+Moving the browser to another monitor, resizing it, rotating a display or entering fullscreen updates the stage and canvas automatically. It does not restart the camera or dialogue. The silhouette canvas is redrawn at its new dimensions after an aspect-ratio change. For exhibition use, make the browser fullscreen on the target screen.
+
+Local PNG captures use the current portrait/landscape composition, with the longest edge capped at 3840 pixels to avoid excessive capture memory. The layout adjustment only affects display/capture sizing; provider prompts, dialogue timing, fonts, colours and controls remain the same.
