@@ -4,10 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vercel dev"
+    "dev": "vercel dev",
+    "test": "node --test"
   },
   "devDependencies": {
     "vercel": "^46.0.0"
   }
 }
-

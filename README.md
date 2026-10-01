@@ -28,3 +28,27 @@ Project page: [xiaohan-sun.com/becoming-palimpsest](https://xiaohan-sun.com/beco
 ## Rights
 
 Copyright © 2025 Xiaohan Sun. All rights reserved.
+
+
+## Exhibition request protection
+
+The server owns the original Bergson and Deleuze system prompts. Browsers send only user/assistant dialogue; summaries remain conversation context with user priority. Each provider response stays capped at 300 tokens with the original model defaults and temperature. Layout, animation, camera processing, controls, and dialogue timing are unchanged. Client text is still untrusted: a fixed prompt limits role replacement but does not guarantee immunity to prompt injection.
+
+Both endpoints share a quota namespace: 12 requests per IP per fixed minute, 120 requests overall per fixed minute, and 3,000 requests overall per UTC day by default. The overall limits can be changed with the variables in `.env.example`. Each accepted provider attempt consumes one reservation, including upstream failures; denied requests do not consume the daily quota. These are request limits, not a monetary budget. The existing input bounds also remain: 20 messages, 8,000 characters each, 30,000 characters total, and a 50 KB JSON body (checked in bytes, including pre-parsed bodies).
+
+To enable durable, cross-instance protection before publicly advertising an exhibition:
+
+1. Connect an Upstash Redis database and set `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` in Vercel's server environment. Use a dedicated database or a unique `RATE_LIMIT_PREFIX`; keep the same prefix across the exhibition's instances and endpoints. Use a different prefix/database for previews.
+2. Set `REQUIRE_SHARED_RATE_LIMIT=true` and redeploy. Counters are reserved atomically through Redis. Missing, invalid, timed-out, or unavailable shared storage blocks paid generation with a generic 503 instead of silently bypassing limits.
+3. Check a normal dialogue on the deployed site and confirm both providers respond. Test quotas in a separate preview using a low overall limit. Verify excess calls return 429 with `Retry-After`, and broken Redis credentials return 503 without provider requests.
+4. Set any available provider-side usage controls and billing alerts separately. Choose daily request limits for the expected exhibition duration and attendance; all viewers on the same public IP share the 12/minute quota.
+
+**Deployment status matters:** leaving both Redis variables empty and `REQUIRE_SHARED_RATE_LIMIT=false` preserves compatibility using bounded, expiring in-memory counters. These counters reset on restarts and are not shared across serverless instances; this mode is not a global spending cap. Adding code to GitHub does not configure Vercel or provider billing settings.
+
+Provider requests time out after 20 seconds; shared-storage requests after 3 seconds. API responses are not cached, and provider errors/credentials are not returned or logged. The additional CSP restricts base URLs, object embeds, and form targets without changing camera permissions or the external libraries used by the artwork.
+
+Camera processing occurs locally in the visitor's browser. Images are not uploaded by the artwork. Dialogue text is sent to the selected AI provider through the server. Display this notice in the exhibition label if needed; no new entry screen or consent interaction is added.
+
+Implementation references: [Upstash REST API](https://upstash.com/docs/redis/features/restapi), [Vercel request headers](https://vercel.com/docs/headers/request-headers). Outside Vercel, rate limiting uses the socket address instead of trusting arbitrary forwarded headers.
+
+Run regression tests with `npm test` (Node.js 20 or newer). Tests mock provider/storage calls and incur no AI usage fees.
