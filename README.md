@@ -32,7 +32,7 @@ Copyright © 2025 Xiaohan Sun. All rights reserved.
 
 ## Exhibition request protection
 
-The server owns the original Bergson and Deleuze system prompts. Browsers send only user/assistant dialogue; summaries remain conversation context with user priority. Each provider response stays capped at 300 tokens using GPT-5.6 Sol, reasoning disabled, and the original temperature of 0.8. Layout, animation, camera processing, controls, and dialogue timing are unchanged. Client text is still untrusted: a fixed prompt limits role replacement but does not guarantee immunity to prompt injection.
+The server owns the Bergson and Deleuze prompts from the user-selected exhibition_version.html (at most two sentences per reply). Browsers send only user/assistant dialogue; summaries remain conversation context with user priority. Each provider response stays capped at 300 tokens using GPT-5.6 Sol, reasoning disabled, and the original temperature of 0.8. Layout, animation, camera processing, controls, and dialogue timing are unchanged. Client text is still untrusted: a fixed prompt limits role replacement but does not guarantee immunity to prompt injection.
 
 Both endpoints share a quota namespace: 12 requests per IP per fixed minute, 120 requests overall per fixed minute, and 3,000 requests overall per UTC day by default. The overall limits can be changed with the variables in `.env.example`. Each accepted provider attempt consumes one reservation, including upstream failures; denied requests do not consume the daily quota. These are request limits, not a monetary budget. The existing input bounds also remain: 20 messages, 8,000 characters each, 30,000 characters total, and a 50 KB JSON body (checked in bytes, including pre-parsed bodies).
 
@@ -55,7 +55,7 @@ Run regression tests with `npm test` (Node.js 20 or newer). Tests mock provider/
 
 ## Display scaling
 
-The work fills the browser viewport in portrait, landscape, square and ultrawide displays. Typography, spacing, buttons and character animation distances scale together using the shorter viewport edge relative to 1080 CSS pixels. At 1920 × 1080 the original sizes are retained; at 3840 × 2160 or 2160 × 3840 they render at 2×. OS display scaling can make CSS pixels differ from a monitor's hardware pixels.
+The work fills the browser viewport in portrait, landscape, square and ultrawide displays. Typography, spacing, buttons and controls scale together using the shorter viewport edge relative to 1080 CSS pixels. The exhibition source uses 36px dialogue text and 34px topic text at a 1080 CSS-pixel shorter edge; at 3840 × 2160 or 2160 × 3840 they render at 2×. OS display scaling can make CSS pixels differ from a monitor's hardware pixels.
 
 The layout adapts to the aspect ratio: portrait screens show narrower, taller dialogue with natural line wrapping, while landscape screens show wider lines. The work has no fixed landscape frame or outer letterboxing. Camera imagery and silhouette coordinates use proportional cover scaling, so the image fills the screen without stretching people (camera edges may be cropped when screen and camera aspect ratios differ).
 
@@ -64,3 +64,7 @@ Moving the browser to another monitor, resizing it, rotating a display or enteri
 Local PNG captures use the current portrait/landscape composition, with the longest edge capped at 3840 pixels to avoid excessive capture memory. The layout adjustment only affects display/capture sizing; provider prompts, dialogue timing, fonts, colours and controls remain the same.
 
 Both characters now use OpenAI with their separate original prompts. The `/api/deepseek` route remains for compatibility with the existing browser interaction; it no longer sends requests to DeepSeek. The shared `OPENAI_MODEL` setting defaults to `gpt-5.6-sol`.
+
+## Exhibition source
+
+The public page is based on the artist’s `exhibition_version.html`, replacing the previously imported print version. It restores the visible topic, larger type, hidden raw camera image, gray silhouette trails, slower typewriter, speech synthesis (Bergson rate 0.3, Deleuze 0.35), capture/clear every 8 turns and restart every 16. Per-character wave and floating animations are absent. Captures remain local as in the supplied file’s active capture function; unused cloud-upload code and all embedded credentials are excluded. Topic wrapping is measured on resize so dialogue does not overlap it. GPT-5.6 and server-side request protection remain in place.

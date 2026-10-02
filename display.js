@@ -18,6 +18,16 @@
         stage.style.height = `${height}px`;
         stage.style.transform = `scale(${scale})`;
 
+        // Preserve the exhibition's spacing, moving dialogue down only when
+        // the topic wraps farther on a narrow screen.
+        const topic = document.getElementById('topic-header');
+        const chat = document.getElementById('chat-container');
+        if (topic && chat) {
+            topic.style.top = `${Math.min(180, height * 0.094)}px`;
+            const topicBottom = topic.offsetTop + topic.offsetHeight;
+            chat.style.top = `${Math.max(Math.min(680, height * 0.354), topicBottom + 40)}px`;
+        }
+
         // Existing detection loops read these dimensions each frame. Changing
         // displays does not restart the camera, dialogue or animation timers.
         const canvas = document.getElementById('detection-canvas');
@@ -30,10 +40,12 @@
     }
 
     window.ArtworkDisplay = Object.freeze({
+        fit,
         get width() { return width; },
         get height() { return height; }
     });
     window.addEventListener('resize', fit);
     document.addEventListener('fullscreenchange', fit);
     fit();
+    document.fonts?.ready.then(fit);
 })();
