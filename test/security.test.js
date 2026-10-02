@@ -17,13 +17,13 @@ const originalFetch = globalThis.fetch;
 const originalEnv = {...process.env};
 test.afterEach(() => { globalThis.fetch = originalFetch; process.env = {...originalEnv}; });
 function configure() {
-  process.env.OPENAI_API_KEY='test-only'; process.env.DEEPSEEK_API_KEY='test-only';
+  process.env.OPENAI_API_KEY='test-only';
   process.env.UPSTASH_REDIS_REST_URL='https://redis.example'; process.env.UPSTASH_REDIS_REST_TOKEN='test-only';
 }
 
-test('both providers prepend the original prompt and preserve generation settings', async () => {
+test('both characters use OpenAI GPT-5.6 with distinct original prompts', async () => {
   configure();
-  for (const [handler, prompt, model] of [[openai,prompts.bergson,'gpt-4.1-mini'],[deepseek,prompts.deleuze,'deepseek-chat']]) {
+  for (const [handler, prompt, model] of [[openai,prompts.bergson,'gpt-5.6-sol'],[deepseek,prompts.deleuze,'gpt-5.6-sol']]) {
     const calls=[];
     globalThis.fetch=async (url,options) => {
       calls.push([url,options]);
@@ -34,7 +34,11 @@ test('both providers prepend the original prompt and preserve generation setting
     assert.equal(calls.length,2);
     const sent=JSON.parse(calls[1][1].body);
     assert.deepEqual(sent.messages,[{role:'system',content:prompt},...req.body.messages]);
-    assert.equal(sent.max_tokens,300); assert.equal(sent.temperature,0.8); assert.equal(sent.model,model);
+    assert.equal(sent.max_completion_tokens,300); assert.equal(sent.temperature,0.8); assert.equal(sent.model,model);
+    assert.equal(sent.reasoning_effort,'none');
+    assert.equal(calls[1][0],'https://api.openai.com/v1/chat/completions');
+    assert.equal(calls[1][1].headers.Authorization,'Bearer test-only');
+    assert.equal(sent.max_tokens,undefined);
     assert.ok(calls[1][1].signal); assert.equal(calls[1][1].redirect,'error');
   }
 });

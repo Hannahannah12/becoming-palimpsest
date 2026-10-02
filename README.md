@@ -8,12 +8,12 @@ AI-generated language appears and shifts on screen while the viewer's silhouette
 
 - Body detection and camera processing run locally in the visitor's browser
 - Screenshots are downloaded to the visitor's device and are not uploaded
-- Dialogue requests use secure server-side endpoints for OpenAI and DeepSeek
+- Dialogue requests use secure server-side endpoints for OpenAI GPT-5.6 Sol
 - API keys are stored only as deployment environment variables and are never included in this repository
 
 ## Running the work
 
-Import this repository into Vercel, then add `OPENAI_API_KEY` and `DEEPSEEK_API_KEY` in the project's environment variables. Optional model settings are documented in `.env.example`.
+Import this repository into Vercel, then add `OPENAI_API_KEY` in the project's environment variables. Optional model settings are documented in `.env.example`.
 
 ## More information
 
@@ -32,7 +32,7 @@ Copyright © 2025 Xiaohan Sun. All rights reserved.
 
 ## Exhibition request protection
 
-The server owns the original Bergson and Deleuze system prompts. Browsers send only user/assistant dialogue; summaries remain conversation context with user priority. Each provider response stays capped at 300 tokens with the original model defaults and temperature. Layout, animation, camera processing, controls, and dialogue timing are unchanged. Client text is still untrusted: a fixed prompt limits role replacement but does not guarantee immunity to prompt injection.
+The server owns the original Bergson and Deleuze system prompts. Browsers send only user/assistant dialogue; summaries remain conversation context with user priority. Each provider response stays capped at 300 tokens using GPT-5.6 Sol, reasoning disabled, and the original temperature of 0.8. Layout, animation, camera processing, controls, and dialogue timing are unchanged. Client text is still untrusted: a fixed prompt limits role replacement but does not guarantee immunity to prompt injection.
 
 Both endpoints share a quota namespace: 12 requests per IP per fixed minute, 120 requests overall per fixed minute, and 3,000 requests overall per UTC day by default. The overall limits can be changed with the variables in `.env.example`. Each accepted provider attempt consumes one reservation, including upstream failures; denied requests do not consume the daily quota. These are request limits, not a monetary budget. The existing input bounds also remain: 20 messages, 8,000 characters each, 30,000 characters total, and a 50 KB JSON body (checked in bytes, including pre-parsed bodies).
 
@@ -40,7 +40,7 @@ To enable durable, cross-instance protection before publicly advertising an exhi
 
 1. Connect an Upstash Redis database and set `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` in Vercel's server environment. Use a dedicated database or a unique `RATE_LIMIT_PREFIX`; keep the same prefix across the exhibition's instances and endpoints. Use a different prefix/database for previews.
 2. Set `REQUIRE_SHARED_RATE_LIMIT=true` and redeploy. Counters are reserved atomically through Redis. Missing, invalid, timed-out, or unavailable shared storage blocks paid generation with a generic 503 instead of silently bypassing limits.
-3. Check a normal dialogue on the deployed site and confirm both providers respond. Test quotas in a separate preview using a low overall limit. Verify excess calls return 429 with `Retry-After`, and broken Redis credentials return 503 without provider requests.
+3. Check a normal dialogue on the deployed site and confirm both characters respond. Test quotas in a separate preview using a low overall limit. Verify excess calls return 429 with `Retry-After`, and broken Redis credentials return 503 without provider requests.
 4. Set any available provider-side usage controls and billing alerts separately. Choose daily request limits for the expected exhibition duration and attendance; all viewers on the same public IP share the 12/minute quota.
 
 **Deployment status matters:** leaving both Redis variables empty and `REQUIRE_SHARED_RATE_LIMIT=false` preserves compatibility using bounded, expiring in-memory counters. These counters reset on restarts and are not shared across serverless instances; this mode is not a global spending cap. Adding code to GitHub does not configure Vercel or provider billing settings.
@@ -62,3 +62,5 @@ The layout adapts to the aspect ratio: portrait screens show narrower, taller di
 Moving the browser to another monitor, resizing it, rotating a display or entering fullscreen updates the stage and canvas automatically. It does not restart the camera or dialogue. The silhouette canvas is redrawn at its new dimensions after an aspect-ratio change. For exhibition use, make the browser fullscreen on the target screen.
 
 Local PNG captures use the current portrait/landscape composition, with the longest edge capped at 3840 pixels to avoid excessive capture memory. The layout adjustment only affects display/capture sizing; provider prompts, dialogue timing, fonts, colours and controls remain the same.
+
+Both characters now use OpenAI with their separate original prompts. The `/api/deepseek` route remains for compatibility with the existing browser interaction; it no longer sends requests to DeepSeek. The shared `OPENAI_MODEL` setting defaults to `gpt-5.6-sol`.
