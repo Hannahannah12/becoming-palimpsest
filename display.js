@@ -1,7 +1,9 @@
 // Scale all elements together, while allowing the composition to fill any aspect
 // ratio. The shorter edge is the reference, so portrait and landscape agree.
 (() => {
-    const referenceShortEdge = 1080;
+    // 36px exhibition text at a 1440px short edge: 2.5% of the viewport.
+    // CSS viewport pixels avoid treating Retina density as physical screen size.
+    const referenceShortEdge = 1440;
     const stage = document.getElementById('artwork-stage');
     if (!stage) return;
     let width = 1920;

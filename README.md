@@ -55,7 +55,7 @@ Run regression tests with `npm test` (Node.js 20 or newer). Tests mock provider/
 
 ## Display scaling
 
-The work fills the browser viewport in portrait, landscape, square and ultrawide displays. Typography, spacing, buttons and controls scale together using the shorter viewport edge relative to 1080 CSS pixels. The exhibition source uses 36px dialogue text and 34px topic text at a 1080 CSS-pixel shorter edge; at 3840 × 2160 or 2160 × 3840 they render at 2×. OS display scaling can make CSS pixels differ from a monitor's hardware pixels.
+The work fills the browser viewport in portrait, landscape, square and ultrawide displays. Typography, spacing, buttons and controls scale together using the shorter viewport edge relative to 1440 CSS pixels. The exhibition source retains its 36px dialogue and 34px topic styles inside the stage. On screen, dialogue text is 2.5% of the shorter viewport edge: 22.5px at 1440 × 900, 27px at 1920 × 1080 or 1080 × 1920, and 54px at 3840 × 2160 or 2160 × 3840. OS display scaling can make CSS pixels differ from a monitor's hardware pixels.
 
 The layout adapts to the aspect ratio: portrait screens show narrower, taller dialogue with natural line wrapping, while landscape screens show wider lines. The work has no fixed landscape frame or outer letterboxing. Camera imagery and silhouette coordinates use proportional cover scaling, so the image fills the screen without stretching people (camera edges may be cropped when screen and camera aspect ratios differ).
 
@@ -68,3 +68,5 @@ Both characters now use OpenAI with their separate original prompts. The `/api/d
 ## Exhibition source
 
 The public page is based on the artist’s `exhibition_version.html`, replacing the previously imported print version. It restores the visible topic, larger type, hidden raw camera image, gray silhouette trails, slower typewriter, speech synthesis (Bergson rate 0.3, Deleuze 0.35), capture/clear every 8 turns and restart every 16. Per-character wave and floating animations are absent. Captures remain local as in the supplied file’s active capture function; unused cloud-upload code and all embedded credentials are excluded. Topic wrapping is measured on resize so dialogue does not overlap it. GPT-5.6 and server-side request protection remain in place.
+
+Camera and silhouette layers use 100% of the logical stage, never viewport units inside the transformed stage. This avoids double scaling and empty right/bottom regions on laptop windows.
