@@ -81,7 +81,7 @@ Optimized for gallery display and public interaction.
             background: transparent;
             border: none;
             font-family: 'Courier New', monospace;
-            font-size: 34px;
+            font-size: calc(34px * var(--text-scale, 0.8));
             font-style: normal;
             font-weight: 450;
             line-height: 1.6;
@@ -124,7 +124,7 @@ Optimized for gallery display and public interaction.
         
         .dialogue-line {
             margin-bottom: 40px;
-            font-size: 36px;
+            font-size: calc(36px * var(--text-scale, 0.8));
             line-height: 1.6;
             font-family: 'Cormorant Garamond', serif;
             font-style: italic;
@@ -304,14 +304,29 @@ Optimized for gallery display and public interaction.
             background: rgba(255, 255, 255, 0.9);
             border: 1px solid black;
             padding: 15px 25px;
-            font-size: 36px;
+            font-size: calc(36px * var(--text-scale, 0.8));
             z-index: 2000;
             display: none;
             font-family: 'Courier New', monospace;
             backdrop-filter: blur(3px);
         }
         
+        .font-controls {
+            position: fixed;
+            left: 16px;
+            bottom: 16px;
+            z-index: 1100;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            opacity: 0.65;
+        }
+        .font-controls:hover, .font-controls:focus-within { opacity: 1; }
+        .font-controls .control-btn { font-size: 12px; padding: 6px 9px; }
+        .font-controls output { min-width: 38px; text-align: center; font: 12px 'Courier New', monospace; }
+        @media (max-width: 480px) { .font-controls { bottom: 50px; left: 10px; } }
         @media print {
+            .font-controls { display: none !important; }
             .controls {
                 display: none !important;
             }
@@ -341,6 +356,11 @@ Optimized for gallery display and public interaction.
     </div>
     
     </main>
+    <div class="font-controls" role="group" aria-label="Text size">
+        <button class="control-btn" id="text-smaller" aria-label="Decrease text size" title="Smaller text">A−</button>
+        <output id="text-size" aria-live="polite" aria-label="Text size">80%</output>
+        <button class="control-btn" id="text-larger" aria-label="Increase text size" title="Larger text">A+</button>
+    </div>
     <script src="/display.js"></script>
     <script>
 /* 
