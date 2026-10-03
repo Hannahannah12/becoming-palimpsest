@@ -366,6 +366,7 @@ Optimized for gallery display and public interaction.
         </div>
     </div>
     <script src="/display.js"></script>
+    <script src="/trajectories.js"></script>
     <script>
 /* 
 --------------------------------------------- Visual Effects & Canvas --------------------------------------------- 
@@ -474,7 +475,7 @@ Optimized for gallery display and public interaction.
                     segmentationThreshold: 0.6    // 保持原有设置
                 });
                 
-                drawEnhancedPersonBorder(ctx, segmentation, ctx.canvas.width, ctx.canvas.height);
+                drawInkTrajectories(ctx, segmentation, ctx.canvas.width, ctx.canvas.height, video);
                 
             } catch (error) {
                 console.error('Detection error:', error);
@@ -484,6 +485,35 @@ Optimized for gallery display and public interaction.
         }
         
      
+// Keep the previous trajectory available for a direct visual comparison.
+const classicTrajectories = new URLSearchParams(location.search).get('outline') === 'classic';
+function drawInkTrajectories(ctx, segmentation, width, height, video) {
+    if (classicTrajectories) return drawEnhancedPersonBorder(ctx, segmentation, width, height);
+    ctx.fillStyle = 'rgba(232, 232, 232, 0.05)';
+    ctx.fillRect(0, 0, width, height);
+    if (!segmentation?.data) return;
+    const scale = Math.max(width / segmentation.width, height / segmentation.height);
+    const offsetX = (width - segmentation.width * scale) / 2;
+    const offsetY = (height - segmentation.height * scale) / 2;
+    const paths = InkTrajectories.silhouette(segmentation);
+    // A face-reading failure must never interrupt the silhouette or decay loop.
+    try { paths.push(...InkTrajectories.facialPaths(video, segmentation)); }
+    catch (error) { console.warn('Facial contours unavailable:', error.message); }
+    const config = VISUAL_CONFIG.outline;
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = config.width;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    for (const points of paths) {
+        drawSmoothPath(ctx, points.map(p => ({x: p.x * scale + offsetX, y: p.y * scale + offsetY})));
+    }
+    ctx.shadowColor = config.shadowColor;
+    ctx.shadowBlur = config.shadowBlur;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+}
+
 function drawEnhancedPersonBorder(ctx, segmentation, width, height) {
 
     //add transparency to have a trailing effect
