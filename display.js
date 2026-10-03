@@ -9,12 +9,7 @@
     let width = 1920;
     let height = 1080;
 
-    const textSizeKey = 'palimpsest-text-size';
     let textPercent = 80;
-    try {
-        const saved = Number(localStorage.getItem(textSizeKey));
-        if (Number.isFinite(saved) && saved >= 50 && saved <= 120) textPercent = Math.round(saved / 10) * 10;
-    } catch { /* Storage may be unavailable in a restricted browser. */ }
     const smaller = document.getElementById('text-smaller');
     const larger = document.getElementById('text-larger');
     const sizeLabel = document.getElementById('text-size');
@@ -24,7 +19,6 @@
         sizeLabel.value = `${textPercent}%`;
         smaller.disabled = textPercent <= 50;
         larger.disabled = textPercent >= 120;
-        try { localStorage.setItem(textSizeKey, String(textPercent)); } catch { /* Keep session adjustment working. */ }
         fit();
     }
     smaller.addEventListener('click', () => applyTextSize(-10));

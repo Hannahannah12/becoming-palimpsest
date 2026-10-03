@@ -71,4 +71,4 @@ The public page is based on the artist’s `exhibition_version.html`, replacing 
 
 Camera and silhouette layers use 100% of the logical stage, never viewport units inside the transformed stage. This avoids double scaling and empty right/bottom regions on laptop windows.
 
-Text size controls at the bottom left adjust topic and dialogue together from 50% to 120% of responsive sizing. The default is 80% for a less crowded laptop view; the selection is remembered locally in the browser. Resizing still scales proportionally. These controls do not resize the camera or restart the conversation.
+Text size controls at the bottom left adjust topic and dialogue together from 50% to 120% of responsive sizing. The default is 80% for a less crowded laptop view; the selection applies only to the current page and resets to 80% on reload. Resizing still scales proportionally. These controls do not resize the camera or restart the conversation.
