@@ -296,9 +296,26 @@ Optimized for gallery display and public interaction.
         
         .layout-controls { position: absolute; left: 12px; display: flex; gap: 12px; }
         .font-controls { display: flex; align-items: center; gap: 4px; }
-        .font-controls label, .font-controls output { font: 10px 'Courier New', monospace; }
-        .font-controls input { width: 70px; height: 14px; cursor: pointer; accent-color: #555; }
-        .font-controls output { min-width: 30px; text-align: center; }
+        .font-controls label { font: 9px 'Courier New', monospace; }
+        .font-controls output { display: none; }
+        .font-controls input {
+            appearance: none; -webkit-appearance: none;
+            width: 52px; height: 20px; margin: 0;
+            padding: 0; border: 0; border-radius: 0;
+            background: transparent; cursor: pointer;
+        }
+        .font-controls input::-webkit-slider-runnable-track { height: 1px; background: #666; }
+        .font-controls input::-webkit-slider-thumb {
+            appearance: none; -webkit-appearance: none;
+            width: 6px; height: 6px; margin-top: -2.5px;
+            border: 0; border-radius: 50%; background: #555;
+        }
+        .font-controls input::-moz-range-track { height: 1px; background: #666; }
+        .font-controls input::-moz-range-thumb {
+            width: 6px; height: 6px; border: 0; border-radius: 50%; background: #555;
+        }
+        .font-controls input:focus { outline: none; }
+        .font-controls input:focus-visible { outline: 1px dotted #777; outline-offset: 2px; }
         @media (max-width: 850px) {
             .control-frame { flex-wrap: wrap; gap: 10px; }
             .layout-controls { position: static; flex-wrap: wrap; justify-content: center; }
