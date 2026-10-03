@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Becoming Palimpsest — Visual Study</title>
+<!-- Single-file visual study. Internet is needed for TensorFlow/BodyPix and its model.
+     Open on localhost or HTTPS and allow camera access. No AI keys or dialogue.
+     Camera frames are processed locally in the browser. -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.2.1/dist/body-pix.min.js"></script>
+<style>
+html,body {margin:0; width:100%; height:100%; overflow:hidden; background:rgb(232,232,232);}
+#artwork-stage {position:fixed; left:0; top:0; transform-origin:top left; overflow:hidden;}
+#camera-background {position:absolute; width:100%; height:100%; object-fit:cover; opacity:0; pointer-events:none;}
+</style>
+</head>
+<body>
+<main id="artwork-stage"><video id="camera-background" autoplay muted playsinline></video></main>
+<script>
+/* Camera-derived ink paths. No changes to the ink renderer or trail decay. */
+(() => {
+    function silhouette(segmentation) {
+        const {data, width, height} = segmentation;
+        const step = Math.max(1, Math.ceil(Math.max(width, height) / 320));
+        const w = Math.ceil(width / step), h = Math.ceil(height / step);
+        const mask = new Uint8Array(w * h);
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+            let votes = 0;
+            for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+                const sx = Math.max(0, Math.min(width - 1, x * step + dx));
+                const sy = Math.max(0, Math.min(height - 1, y * step + dy));
+                votes += data[sy * width + sx] === 1 ? 1 : 0;
+            }
+            mask[y * w + x] = votes >= 5 ? 1 : 0;
+        }
+        // Directed cell boundaries keep disconnected silhouettes separate.
+        // Do not draw the edge of the camera frame when a person is cropped.
+        const edges = [], outgoing = new Map();
+        const key = (x, y) => y * (w + 1) + x;
+        const add = (x, y, nx, ny) => {
+            const edge = {x, y, nx, ny, used: false};
+            edges.push(edge);
+            const k = key(x, y);
+            if (!outgoing.has(k)) outgoing.set(k, []);
+            outgoing.get(k).push(edge);
+        };
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+            if (!mask[y * w + x]) continue;
+            if (y > 0 && !mask[(y - 1) * w + x]) add(x, y, x + 1, y);
+            if (x < w - 1 && !mask[y * w + x + 1]) add(x + 1, y, x + 1, y + 1);
+            if (y < h - 1 && !mask[(y + 1) * w + x]) add(x + 1, y + 1, x, y + 1);
+            if (x > 0 && !mask[y * w + x - 1]) add(x, y + 1, x, y);
+        }
+        const paths = [];
+        // Begin open contours at their source so frame-clipped paths stay whole.
+        const incoming = new Set(edges.map(e => key(e.nx, e.ny)));
+        const ordered = [...edges.filter(e => !incoming.has(key(e.x, e.y))), ...edges];
+        for (const start of ordered) {
+            if (start.used) continue;
+            let edge = start;
+            const points = [{x: edge.x * step, y: edge.y * step}];
+            while (edge && !edge.used) {
+                edge.used = true;
+                points.push({x: edge.nx * step, y: edge.ny * step});
+                const candidates = (outgoing.get(key(edge.nx, edge.ny)) || []).filter(e => !e.used);
+                const dx = edge.nx - edge.x, dy = edge.ny - edge.y;
+                // Right turns at a diagonal contact avoid joining two people.
+                candidates.sort((a, b) => {
+                    const rank = e => dx * (e.ny - e.y) - dy * (e.nx - e.x);
+                    return rank(b) - rank(a);
+                });
+                edge = candidates[0];
+            }
+            if (points.length < 16) continue;
+            paths.push(points.filter((_, i) => i % 2 === 0 || i === points.length - 1));
+        }
+        return paths;
+    }
+
+    let faceCanvas, faceContext;
+    function facialPaths(video, segmentation) {
+        const paths = [];
+        if (!video || video.readyState < 2) return paths;
+        if (!faceCanvas) {
+            faceCanvas = document.createElement('canvas');
+            faceCanvas.width = 80; faceCanvas.height = 80;
+            faceContext = faceCanvas.getContext('2d', {willReadFrequently: true});
+        }
+        for (const pose of (segmentation.allPoses || []).slice(0, 4)) {
+            const points = Object.fromEntries(pose.keypoints.map(p => [p.part, p]));
+            let left = points.leftEye, right = points.rightEye;
+            if (!left || !right || left.score < .65 || right.score < .65 || points.nose?.score < .65) continue;
+            if (left.position.x > right.position.x) [left, right] = [right, left];
+            const dx = right.position.x - left.position.x, dy = right.position.y - left.position.y;
+            const distance = Math.hypot(dx, dy);
+            if (distance < 18) continue;
+            const ux = dx / distance, uy = dy / distance;
+            const cx = (left.position.x + right.position.x) / 2;
+            const cy = (left.position.y + right.position.y) / 2;
+            const scale = 40 / distance;
+            // Normalize a small face crop around the eyes; its pixels stay local.
+            faceContext.setTransform(scale * ux, -scale * uy, scale * uy, scale * ux,
+                40 - scale * (ux * cx + uy * cy), 24 - scale * (-uy * cx + ux * cy));
+            faceContext.filter = 'blur(1px)';
+            faceContext.drawImage(video, 0, 0, segmentation.width, segmentation.height);
+            faceContext.setTransform(1, 0, 0, 1, 0, 0);
+            faceContext.filter = 'none';
+            const pixels = faceContext.getImageData(0, 0, 80, 80).data;
+            const gray = new Float32Array(6400), magnitude = new Float32Array(6400);
+            const gx = new Float32Array(6400), gy = new Float32Array(6400);
+            for (let i = 0; i < 6400; i++) gray[i] = pixels[i * 4] * .299 + pixels[i * 4 + 1] * .587 + pixels[i * 4 + 2] * .114;
+            for (let y = 1; y < 79; y++) for (let x = 1; x < 79; x++) {
+                const i = y * 80 + x;
+                gx[i] = gray[i - 79] + 2 * gray[i + 1] + gray[i + 81] - gray[i - 81] - 2 * gray[i - 1] - gray[i + 79];
+                gy[i] = gray[i + 79] + 2 * gray[i + 80] + gray[i + 81] - gray[i - 81] - 2 * gray[i - 80] - gray[i - 79];
+                magnitude[i] = Math.hypot(gx[i], gy[i]);
+            }
+            // Small real-image regions for eyes/brows, nose, and mouth, not drawn facial templates.
+            const regions = [[9, 15, 31, 31], [49, 15, 71, 31], [30, 32, 50, 51], [23, 51, 57, 68]];
+            for (const [x0, y0, x1, y1] of regions) {
+                const strengths = [];
+                for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) strengths.push(magnitude[y * 80 + x]);
+                strengths.sort((a, b) => a - b);
+                const threshold = Math.max(35, strengths[Math.floor(strengths.length * .8)]);
+                const edgePixels = new Set();
+                for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+                    const i = y * 80 + x;
+                    const ax = Math.abs(gx[i]), ay = Math.abs(gy[i]);
+                    const direction = ax > ay * 2 ? 1 : ay > ax * 2 ? 80 : gx[i] * gy[i] > 0 ? 81 : 79;
+                    if (magnitude[i] >= threshold && magnitude[i] >= magnitude[i - direction] && magnitude[i] >= magnitude[i + direction]) edgePixels.add(i);
+                }
+                const candidates = [];
+                while (edgePixels.size) {
+                    let current = edgePixels.values().next().value;
+                    const chain = [];
+                    while (current !== undefined) {
+                        edgePixels.delete(current);
+                        chain.push(current);
+                        current = [-1, 1, -80, 80, -81, -79, 79, 81].map(d => current + d).find(i => edgePixels.has(i));
+                    }
+                    if (chain.length >= 6) candidates.push(chain);
+                }
+                candidates.sort((a, b) => b.length - a.length);
+                for (const chain of candidates.slice(0, 2)) {
+                    const path = chain.filter((_, i) => i % 2 === 0).map(i => {
+                        const x = (i % 80 - 40) / scale, y = (Math.floor(i / 80) - 24) / scale;
+                        return {x: cx + ux * x - uy * y, y: cy + uy * x + ux * y};
+                    });
+                    if (path.every(p => {
+                        const x = Math.round(p.x), y = Math.round(p.y);
+                        return x >= 0 && x < segmentation.width && y >= 0 && y < segmentation.height && segmentation.data[y * segmentation.width + x] === 1;
+                    })) paths.push(path);
+                }
+            }
+        }
+        return paths;
+    }
+    globalThis.InkTrajectories = {silhouette, facialPaths};
+})();
+
+let bodyPixNet = null;
+let lastDetectionTime = 0;
+const stage = document.getElementById('artwork-stage');
+const ArtworkDisplay = {width: 1440, height: 1440};
+function fitVisual() {
+    const scale = Math.max(1, Math.min(innerWidth, innerHeight)) / 1440;
+    ArtworkDisplay.width = Math.round(innerWidth / scale);
+    ArtworkDisplay.height = Math.round(innerHeight / scale);
+    stage.style.width = ArtworkDisplay.width + 'px';
+    stage.style.height = ArtworkDisplay.height + 'px';
+    stage.style.transform = 'scale(' + scale + ')';
+    const canvas = document.getElementById('detection-canvas');
+    if (canvas) {
+        if (canvas.width !== ArtworkDisplay.width) canvas.width = ArtworkDisplay.width;
+        if (canvas.height !== ArtworkDisplay.height) canvas.height = ArtworkDisplay.height;
+    }
+}
+addEventListener('resize', fitVisual);
+document.addEventListener('fullscreenchange', fitVisual);
+fitVisual();
+
+        const VISUAL_CONFIG = {
+            // Outline effect parameters
+            outline: {
+                color: 'rgba(0, 0, 0, 0.2)',
+                width: 2,
+                shadowBlur: 10,
+                shadowColor: 'rgba(1, 1, 1)'
+            }
+        };
+        
+
+
+/* 
+--------------------------------------------- Visual Effects & Canvas --------------------------------------------- 
+*/        
+        // Camera initialization function
+        async function initCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 },
+                        facingMode: 'user'
+                    }
+                });
+                
+                const video = document.getElementById('camera-background');
+                video.srcObject = stream;
+
+                
+
+                
+                // Initialize person detection after video loads
+                video.addEventListener('loadeddata', () => {
+                    initPersonDetection(video);
+                }, { once: true });
+                await video.play();
+            } catch (error) {
+                console.error('Camera access failed:', error);
+            }
+        }
+        
+ /* 
+--------------------------------------------- Camera & Detection --------------------------------------------- 
+*/       
+        // Person detection and border drawing
+        async function initPersonDetection(video) {
+            try {
+                //BodyPix model
+                console.log('Loading model...');
+                bodyPixNet = await bodyPix.load({
+                    architecture: 'MobileNetV1',
+                    outputStride: 16,
+                    multiplier: 0.75,
+                    quantBytes: 2
+                });
+                console.log('Model loaded successfully');
+                
+                // Create canvas for drawing
+                const canvas = document.createElement('canvas');
+                canvas.id = 'detection-canvas';
+                canvas.style.position = 'fixed';
+                canvas.style.top = '0';
+                canvas.style.left = '0';
+                canvas.style.width = '100%';
+                canvas.style.height = '100%';
+                canvas.style.zIndex = '50';
+                canvas.style.pointerEvents = 'none';
+                canvas.style.transform = 'scaleX(-1)'; 
+                document.getElementById('artwork-stage').appendChild(canvas);
+                
+                const ctx = canvas.getContext('2d');
+                canvas.width = ArtworkDisplay.width;
+                canvas.height = ArtworkDisplay.height;
+                
+                // Start detection loop
+                detectPersonLoop(video, ctx);
+                
+            } catch (error) {
+                console.error('Detection initialization failed:', error);
+            }
+        }
+        
+        async function detectPersonLoop(video, ctx) {
+            if (!bodyPixNet || video.readyState < 2) {
+                requestAnimationFrame(() => detectPersonLoop(video, ctx));
+                return;
+            }
+            
+            const now = Date.now();
+            if (now - lastDetectionTime < 50) { 
+                requestAnimationFrame(() => detectPersonLoop(video, ctx));
+                return;
+            }
+            lastDetectionTime = now;
+            
+            try {
+                const segmentation = await bodyPixNet.segmentPerson(video, {
+                    flipHorizontal: false,
+                    internalResolution: 'medium', // 保持原有设置
+                    segmentationThreshold: 0.6    // 保持原有设置
+                });
+                
+                drawInkTrajectories(ctx, segmentation, ctx.canvas.width, ctx.canvas.height, video);
+                
+            } catch (error) {
+                console.error('Detection error:', error);
+            }
+            
+            requestAnimationFrame(() => detectPersonLoop(video, ctx));
+        }
+        
+     
+// Keep the previous trajectory available for a direct visual comparison.
+const classicTrajectories = false;
+function drawInkTrajectories(ctx, segmentation, width, height, video) {
+    if (classicTrajectories) return drawEnhancedPersonBorder(ctx, segmentation, width, height);
+    ctx.fillStyle = 'rgba(232, 232, 232, 0.05)';
+    ctx.fillRect(0, 0, width, height);
+    if (!segmentation?.data) return;
+    const scale = Math.max(width / segmentation.width, height / segmentation.height);
+    const offsetX = (width - segmentation.width * scale) / 2;
+    const offsetY = (height - segmentation.height * scale) / 2;
+    const paths = InkTrajectories.silhouette(segmentation);
+    // A face-reading failure must never interrupt the silhouette or decay loop.
+    try { paths.push(...InkTrajectories.facialPaths(video, segmentation)); }
+    catch (error) { console.warn('Facial contours unavailable:', error.message); }
+    const config = VISUAL_CONFIG.outline;
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = config.width;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    for (const points of paths) {
+        drawSmoothPath(ctx, points.map(p => ({x: p.x * scale + offsetX, y: p.y * scale + offsetY})));
+    }
+    ctx.shadowColor = config.shadowColor;
+    ctx.shadowBlur = config.shadowBlur;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+}
+
+function drawEnhancedPersonBorder(ctx, segmentation, width, height) {
+
+    //add transparency to have a trailing effect
+    ctx.fillStyle = 'rgba(232, 232, 232, 0.05)';
+    ctx.fillRect(0, 0, width, height);
+    
+    if (!segmentation || !segmentation.data) return;
+    
+    const videoWidth = segmentation.width;
+    const videoHeight = segmentation.height;
+    const cameraScale = Math.max(width / videoWidth, height / videoHeight);
+    const offsetX = (width - videoWidth * cameraScale) / 2;
+    const offsetY = (height - videoHeight * cameraScale) / 2;
+    
+    // edges
+    const edges = [];
+    
+    for (let y = 1; y < videoHeight - 1; y++) {
+        for (let x = 1; x < videoWidth - 1; x++) {
+            const index = y * videoWidth + x;
+            const current = segmentation.data[index];
+            
+            if (current === 1) {
+                const left = segmentation.data[index - 1];
+                const right = segmentation.data[index + 1];
+                const top = segmentation.data[(y - 1) * videoWidth + x];
+                const bottom = segmentation.data[(y + 1) * videoWidth + x];
+                
+                if (left === 0 || right === 0 || top === 0 || bottom === 0) {
+                    edges.push({
+                        x: x * cameraScale + offsetX,
+                        y: y * cameraScale + offsetY
+                    });
+                }
+            }
+        }
+    }
+    
+    // drawing the edge
+    if (edges.length > 0) {
+        const config = VISUAL_CONFIG.outline;
+        
+      
+        ctx.strokeStyle = '#000000'; 
+        ctx.lineWidth = config.width;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+       
+        ctx.beginPath();
+        let currentPath = [edges[0]];
+        
+        for (let i = 1; i < edges.length; i++) {
+            const current = edges[i];
+            const last = currentPath[currentPath.length - 1];
+            const distance = Math.sqrt(
+                Math.pow(current.x - last.x, 2) + 
+                Math.pow(current.y - last.y, 2)
+            );
+            
+            if (distance < 15) {
+                currentPath.push(current);
+            } else {
+                if (currentPath.length > 1) {
+                    drawSmoothPath(ctx, currentPath);
+                }
+                currentPath = [current];
+            }
+        }
+        
+        if (currentPath.length > 1) {
+            drawSmoothPath(ctx, currentPath);
+        }
+        
+        ctx.shadowColor = config.shadowColor;
+        ctx.shadowBlur = config.shadowBlur;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+}
+        
+        // Draw smooth path
+        function drawSmoothPath(ctx, points) {
+            if (points.length < 2) return;
+            
+            ctx.moveTo(points[0].x, points[0].y);
+            
+            for (let i = 1; i < points.length - 1; i++) {
+                const current = points[i];
+                const next = points[i + 1];
+                const cpx = (current.x + next.x) / 2;
+                const cpy = (current.y + next.y) / 2;
+                ctx.quadraticCurveTo(current.x, current.y, cpx, cpy);
+            }
+            
+            // Connect to the last point
+            const last = points[points.length - 1];
+            ctx.lineTo(last.x, last.y);
+        } 
+        
+        // camera image after page loads
+        window.addEventListener('load', initCamera);
+
+</script>
+</body>
+</html>

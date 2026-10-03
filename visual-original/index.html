@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Becoming Palimpsest — Original Visual</title>
+<!-- Single-file visual study. Internet is needed for TensorFlow/BodyPix and its model.
+     Open on localhost or HTTPS and allow camera access. No AI keys or dialogue.
+     Camera frames are processed locally in the browser. -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.2.1/dist/body-pix.min.js"></script>
+<style>
+html,body {margin:0; width:100%; height:100%; overflow:hidden; background:rgb(232,232,232);}
+#artwork-stage {position:fixed; left:0; top:0; transform-origin:top left; overflow:hidden;}
+#camera-background {position:absolute; width:100%; height:100%; object-fit:cover; opacity:0; pointer-events:none;}
+</style>
+</head>
+<body>
+<main id="artwork-stage"><video id="camera-background" autoplay muted playsinline></video></main>
+<script>
+let bodyPixNet = null;
+let lastDetectionTime = 0;
+const stage = document.getElementById('artwork-stage');
+const ArtworkDisplay = {width: 1440, height: 1440};
+function fitVisual() {
+    const scale = Math.max(1, Math.min(innerWidth, innerHeight)) / 1440;
+    ArtworkDisplay.width = Math.round(innerWidth / scale);
+    ArtworkDisplay.height = Math.round(innerHeight / scale);
+    stage.style.width = ArtworkDisplay.width + 'px';
+    stage.style.height = ArtworkDisplay.height + 'px';
+    stage.style.transform = 'scale(' + scale + ')';
+    const canvas = document.getElementById('detection-canvas');
+    if (canvas) {
+        if (canvas.width !== ArtworkDisplay.width) canvas.width = ArtworkDisplay.width;
+        if (canvas.height !== ArtworkDisplay.height) canvas.height = ArtworkDisplay.height;
+    }
+}
+addEventListener('resize', fitVisual);
+document.addEventListener('fullscreenchange', fitVisual);
+fitVisual();
+
+        const VISUAL_CONFIG = {
+            // Outline effect parameters
+            outline: {
+                color: 'rgba(0, 0, 0, 0.2)',
+                width: 2,
+                shadowBlur: 10,
+                shadowColor: 'rgba(1, 1, 1)'
+            }
+        };
+        
+
+
+/* 
+--------------------------------------------- Visual Effects & Canvas --------------------------------------------- 
+*/        
+        // Camera initialization function
+        async function initCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 },
+                        facingMode: 'user'
+                    }
+                });
+                
+                const video = document.getElementById('camera-background');
+                video.srcObject = stream;
+
+                
+
+                
+                // Initialize person detection after video loads
+                video.addEventListener('loadeddata', () => {
+                    initPersonDetection(video);
+                }, { once: true });
+                await video.play();
+            } catch (error) {
+                console.error('Camera access failed:', error);
+            }
+        }
+        
+ /* 
+--------------------------------------------- Camera & Detection --------------------------------------------- 
+*/       
+        // Person detection and border drawing
+        async function initPersonDetection(video) {
+            try {
+                //BodyPix model
+                console.log('Loading model...');
+                bodyPixNet = await bodyPix.load({
+                    architecture: 'MobileNetV1',
+                    outputStride: 16,
+                    multiplier: 0.75,
+                    quantBytes: 2
+                });
+                console.log('Model loaded successfully');
+                
+                // Create canvas for drawing
+                const canvas = document.createElement('canvas');
+                canvas.id = 'detection-canvas';
+                canvas.style.position = 'fixed';
+                canvas.style.top = '0';
+                canvas.style.left = '0';
+                canvas.style.width = '100%';
+                canvas.style.height = '100%';
+                canvas.style.zIndex = '50';
+                canvas.style.pointerEvents = 'none';
+                canvas.style.transform = 'scaleX(-1)'; 
+                document.getElementById('artwork-stage').appendChild(canvas);
+                
+                const ctx = canvas.getContext('2d');
+                canvas.width = ArtworkDisplay.width;
+                canvas.height = ArtworkDisplay.height;
+                
+                // Start detection loop
+                detectPersonLoop(video, ctx);
+                
+            } catch (error) {
+                console.error('Detection initialization failed:', error);
+            }
+        }
+        
+        async function detectPersonLoop(video, ctx) {
+            if (!bodyPixNet || video.readyState < 2) {
+                requestAnimationFrame(() => detectPersonLoop(video, ctx));
+                return;
+            }
+            
+            const now = Date.now();
+            if (now - lastDetectionTime < 50) { 
+                requestAnimationFrame(() => detectPersonLoop(video, ctx));
+                return;
+            }
+            lastDetectionTime = now;
+            
+            try {
+                const segmentation = await bodyPixNet.segmentPerson(video, {
+                    flipHorizontal: false,
+                    internalResolution: 'medium', // 保持原有设置
+                    segmentationThreshold: 0.6    // 保持原有设置
+                });
+                
+                drawEnhancedPersonBorder(ctx, segmentation, ctx.canvas.width, ctx.canvas.height);
+                
+            } catch (error) {
+                console.error('Detection error:', error);
+            }
+            
+            requestAnimationFrame(() => detectPersonLoop(video, ctx));
+        }
+        
+     
+function drawEnhancedPersonBorder(ctx, segmentation, width, height) {
+
+    //add transparency to have a trailing effect
+    ctx.fillStyle = 'rgba(232, 232, 232, 0.05)';
+    ctx.fillRect(0, 0, width, height);
+    
+    if (!segmentation || !segmentation.data) return;
+    
+    const videoWidth = segmentation.width;
+    const videoHeight = segmentation.height;
+    const cameraScale = Math.max(width / videoWidth, height / videoHeight);
+    const offsetX = (width - videoWidth * cameraScale) / 2;
+    const offsetY = (height - videoHeight * cameraScale) / 2;
+    
+    // edges
+    const edges = [];
+    
+    for (let y = 1; y < videoHeight - 1; y++) {
+        for (let x = 1; x < videoWidth - 1; x++) {
+            const index = y * videoWidth + x;
+            const current = segmentation.data[index];
+            
+            if (current === 1) {
+                const left = segmentation.data[index - 1];
+                const right = segmentation.data[index + 1];
+                const top = segmentation.data[(y - 1) * videoWidth + x];
+                const bottom = segmentation.data[(y + 1) * videoWidth + x];
+                
+                if (left === 0 || right === 0 || top === 0 || bottom === 0) {
+                    edges.push({
+                        x: x * cameraScale + offsetX,
+                        y: y * cameraScale + offsetY
+                    });
+                }
+            }
+        }
+    }
+    
+    // drawing the edge
+    if (edges.length > 0) {
+        const config = VISUAL_CONFIG.outline;
+        
+      
+        ctx.strokeStyle = '#000000'; 
+        ctx.lineWidth = config.width;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+       
+        ctx.beginPath();
+        let currentPath = [edges[0]];
+        
+        for (let i = 1; i < edges.length; i++) {
+            const current = edges[i];
+            const last = currentPath[currentPath.length - 1];
+            const distance = Math.sqrt(
+                Math.pow(current.x - last.x, 2) + 
+                Math.pow(current.y - last.y, 2)
+            );
+            
+            if (distance < 15) {
+                currentPath.push(current);
+            } else {
+                if (currentPath.length > 1) {
+                    drawSmoothPath(ctx, currentPath);
+                }
+                currentPath = [current];
+            }
+        }
+        
+        if (currentPath.length > 1) {
+            drawSmoothPath(ctx, currentPath);
+        }
+        
+        ctx.shadowColor = config.shadowColor;
+        ctx.shadowBlur = config.shadowBlur;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+}
+        
+        // Draw smooth path
+        function drawSmoothPath(ctx, points) {
+            if (points.length < 2) return;
+            
+            ctx.moveTo(points[0].x, points[0].y);
+            
+            for (let i = 1; i < points.length - 1; i++) {
+                const current = points[i];
+                const next = points[i + 1];
+                const cpx = (current.x + next.x) / 2;
+                const cpy = (current.y + next.y) / 2;
+                ctx.quadraticCurveTo(current.x, current.y, cpx, cpy);
+            }
+            
+            // Connect to the last point
+            const last = points[points.length - 1];
+            ctx.lineTo(last.x, last.y);
+        } 
+        
+        // camera image after page loads
+        window.addEventListener('load', initCamera);
+
+</script>
+</body>
+</html>
