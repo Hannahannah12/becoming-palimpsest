@@ -319,10 +319,13 @@ Optimized for gallery display and public interaction.
             display: flex;
             align-items: center;
             gap: 6px;
-            opacity: 0.65;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
         .font-controls:hover, .font-controls:focus-within { opacity: 1; }
-        .font-controls .control-btn { font-size: 12px; padding: 6px 9px; }
+        .font-controls::before { content: ''; position: absolute; inset: -20px; z-index: -1; }
+        .font-controls label { font: 12px 'Courier New', monospace; }
+        .font-controls input { width: 110px; cursor: pointer; accent-color: #555; }
         .font-controls output { min-width: 38px; text-align: center; font: 12px 'Courier New', monospace; }
         @media (max-width: 480px) { .font-controls { bottom: 50px; left: 10px; } }
         @media print {
@@ -357,9 +360,9 @@ Optimized for gallery display and public interaction.
     
     </main>
     <div class="font-controls" role="group" aria-label="Text size">
-        <button class="control-btn" id="text-smaller" aria-label="Decrease text size" title="Smaller text">A−</button>
-        <output id="text-size" aria-live="polite" aria-label="Text size">80%</output>
-        <button class="control-btn" id="text-larger" aria-label="Increase text size" title="Larger text">A+</button>
+        <label for="text-scale">Text</label>
+        <input id="text-scale" type="range" min="50" max="120" step="5" value="80" aria-label="Text size" aria-valuetext="80%">
+        <output id="text-size" for="text-scale">80%</output>
     </div>
     <script src="/display.js"></script>
     <script>

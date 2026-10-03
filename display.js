@@ -10,19 +10,18 @@
     let height = 1080;
 
     let textPercent = 80;
-    const smaller = document.getElementById('text-smaller');
-    const larger = document.getElementById('text-larger');
+    const textSlider = document.getElementById('text-scale');
     const sizeLabel = document.getElementById('text-size');
-    function applyTextSize(change = 0) {
-        textPercent = Math.max(50, Math.min(120, textPercent + change));
+    function applyTextSize() {
+        textPercent = Math.max(50, Math.min(120, Number(textSlider.value) || 80));
         stage.style.setProperty('--text-scale', textPercent / 100);
         sizeLabel.value = `${textPercent}%`;
-        smaller.disabled = textPercent <= 50;
-        larger.disabled = textPercent >= 120;
+        textSlider.setAttribute('aria-valuetext', `${textPercent}%`);
         fit();
     }
-    smaller.addEventListener('click', () => applyTextSize(-10));
-    larger.addEventListener('click', () => applyTextSize(10));
+    textSlider.addEventListener('input', applyTextSize);
+    // Mouse dragging should fade when the pointer leaves; keyboard focus stays visible.
+    textSlider.addEventListener('pointerup', () => textSlider.blur());
 
     function fit() {
         const viewportWidth = window.innerWidth;
