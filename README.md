@@ -74,3 +74,5 @@ Camera and silhouette layers use 100% of the logical stage, never viewport units
 A text size slider at the bottom left adjusts topic and dialogue together from 50% to 120% of responsive sizing. The default is 80% for a less crowded laptop view; the selection applies only to the current page and resets to 80% on reload. Resizing still scales proportionally. These controls do not resize the camera or restart the conversation.
 
 The slider fades in on hover or keyboard focus and becomes transparent when the pointer leaves. It applies changes live without browser storage.
+
+A shared bottom control frame reveals both compact sliders and the start/end buttons together on hover or keyboard focus. Spacing adjusts the introduction’s top margin and gap above dialogue from 0% to 150% of the default, constrained when needed to keep dialogue visible. Both sliders reset on reload.

@@ -23,6 +23,22 @@
     // Mouse dragging should fade when the pointer leaves; keyboard focus stays visible.
     textSlider.addEventListener('pointerup', () => textSlider.blur());
 
+    const spacingSlider = document.getElementById('spacing-scale');
+    const spacingLabel = document.getElementById('spacing-size');
+    let spacing = 1;
+    spacingSlider.addEventListener('input', () => {
+        const percent = Math.max(0, Math.min(150, Number(spacingSlider.value)));
+        spacing = percent / 100;
+        spacingLabel.value = `${percent}%`;
+        spacingSlider.setAttribute('aria-valuetext', `${percent}%`);
+        fit();
+    });
+    // Share one visibility state for every control, including after pointer clicks.
+    const frame = document.querySelector('.control-frame');
+    frame.addEventListener('pointerup', event => {
+        if (event.target instanceof HTMLElement) event.target.blur();
+    });
+
     function fit() {
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
@@ -39,9 +55,16 @@
         const topic = document.getElementById('topic-header');
         const chat = document.getElementById('chat-container');
         if (topic && chat) {
-            topic.style.top = `${Math.min(180, height * 0.094)}px`;
-            const topicBottom = topic.offsetTop + topic.offsetHeight;
-            chat.style.top = `${Math.max(Math.min(680, height * 0.354), topicBottom + 40)}px`;
+            const baseTop = Math.min(180, height * 0.094);
+            const baseGap = Math.max(40, Math.min(680, height * 0.354) - baseTop - topic.offsetHeight);
+            // Reserve space for at least two dialogue lines and the bottom frame.
+            const requestedSpace = (baseTop + baseGap) * spacing;
+            const availableSpace = Math.max(0, height - topic.offsetHeight - 80 - frame.offsetHeight / scale - 120);
+            const effectiveSpacing = requestedSpace > availableSpace && requestedSpace > 0
+                ? spacing * availableSpace / requestedSpace : spacing;
+            topic.style.top = `${baseTop * effectiveSpacing}px`;
+            chat.style.top = `${baseTop * effectiveSpacing + topic.offsetHeight + baseGap * effectiveSpacing}px`;
+            chat.style.bottom = `${Math.max(80, frame.offsetHeight / scale + 20)}px`;
         }
 
         // Existing detection loops read these dimensions each frame. Changing

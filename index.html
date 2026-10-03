@@ -242,32 +242,15 @@ Optimized for gallery display and public interaction.
             }
         }
         
-        .controls {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 15px;
-            z-index: 1000;
-            opacity: 0;
-            transition: opacity 0.3s ease;
+        .controls { display: flex; gap: 8px; }
+        .control-frame {
+            position: fixed; inset: auto 0 0; z-index: 1100;
+            min-height: 48px; padding: 12px;
+            display: flex; align-items: center; justify-content: center; gap: 20px;
+            opacity: 0; transition: opacity 0.3s ease;
         }
-        
-        .controls:hover {
-            opacity: 1;
-        }
-        
-        .controls::before {
-            content: '';
-            position: absolute;
-            top: -20px;
-            left: -20px;
-            right: -20px;
-            bottom: -20px;
-            z-index: -1;
-        }
-        
+        .control-frame:hover, .control-frame:focus-within { opacity: 1; }
+        .control-frame .control-btn { font-size: 10px; padding: 5px 8px; }
         .control-btn {
             background: rgba(255, 255, 255, 0.8);
             color: black;
@@ -311,24 +294,17 @@ Optimized for gallery display and public interaction.
             backdrop-filter: blur(3px);
         }
         
-        .font-controls {
-            position: fixed;
-            left: 16px;
-            bottom: 16px;
-            z-index: 1100;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            opacity: 0;
-            transition: opacity 0.3s ease;
+        .layout-controls { position: absolute; left: 12px; display: flex; gap: 12px; }
+        .font-controls { display: flex; align-items: center; gap: 4px; }
+        .font-controls label, .font-controls output { font: 10px 'Courier New', monospace; }
+        .font-controls input { width: 70px; height: 14px; cursor: pointer; accent-color: #555; }
+        .font-controls output { min-width: 30px; text-align: center; }
+        @media (max-width: 850px) {
+            .control-frame { flex-wrap: wrap; gap: 10px; }
+            .layout-controls { position: static; flex-wrap: wrap; justify-content: center; }
         }
-        .font-controls:hover, .font-controls:focus-within { opacity: 1; }
-        .font-controls::before { content: ''; position: absolute; inset: -20px; z-index: -1; }
-        .font-controls label { font: 12px 'Courier New', monospace; }
-        .font-controls input { width: 110px; cursor: pointer; accent-color: #555; }
-        .font-controls output { min-width: 38px; text-align: center; font: 12px 'Courier New', monospace; }
-        @media (max-width: 480px) { .font-controls { bottom: 50px; left: 10px; } }
         @media print {
+            .control-frame { display: none !important; }
             .font-controls { display: none !important; }
             .controls {
                 display: none !important;
@@ -350,19 +326,27 @@ Optimized for gallery display and public interaction.
         <div class="chat-container" id="chat-container">
         </div>
         
-        <div class="controls">
-            <button class="control-btn" onclick="startConversation()" id="startBtn">Start Dialogue</button>
-            <button class="control-btn" onclick="pauseConversation()" id="pauseBtn" disabled>End Dialogue</button>
-        </div>
-        
         <div class="status" id="status">Connecting...</div>
     </div>
     
     </main>
-    <div class="font-controls" role="group" aria-label="Text size">
-        <label for="text-scale">Text</label>
-        <input id="text-scale" type="range" min="50" max="120" step="5" value="80" aria-label="Text size" aria-valuetext="80%">
-        <output id="text-size" for="text-scale">80%</output>
+    <div class="control-frame" role="group" aria-label="Exhibition controls">
+        <div class="layout-controls">
+            <div class="font-controls">
+                <label for="text-scale">Text</label>
+                <input id="text-scale" type="range" min="50" max="120" step="5" value="80" aria-label="Text size" aria-valuetext="80%">
+                <output id="text-size" for="text-scale">80%</output>
+            </div>
+            <div class="font-controls">
+                <label for="spacing-scale">Spacing</label>
+                <input id="spacing-scale" type="range" min="0" max="150" step="5" value="100" aria-label="Introduction spacing" aria-valuetext="100%">
+                <output id="spacing-size" for="spacing-scale">100%</output>
+            </div>
+        </div>
+        <div class="controls">
+            <button class="control-btn" onclick="startConversation()" id="startBtn">Start Dialogue</button>
+            <button class="control-btn" onclick="pauseConversation()" id="pauseBtn" disabled>End Dialogue</button>
+        </div>
     </div>
     <script src="/display.js"></script>
     <script>
